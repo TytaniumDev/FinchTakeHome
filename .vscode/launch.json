@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "birdo (debug mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "birdo (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "birdo (test mode)",
+            "request": "launch",
+            "type": "dart",
+            "program": "test/",
+            "args": [
+                "--coverage"
+            ]
+        },
+        {
+            "name": "birdo (hot reload)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main.dart",
+            "args": [
+                "--hot"
+            ]
+        },
+        {
+            "name": "flask server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flask",
+            "args": [
+                "run",
+                "--debug"
+            ],
+            "env": {
+                "FLASK_APP": "server/app.py"
+            },
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }
+    ]
+}
