@@ -60,6 +60,27 @@ class TaskController extends BaseController {
     }
   }
 
+  /// Un-complete a task (mark as incomplete)
+  Future<void> uncompleteTask(String taskId, {DateTime? date}) async {
+    try {
+      // Get the task to determine energy reward
+      final task = await _taskManager.getTask(taskId);
+      if (task == null) {
+        debugPrint('TaskController: Task not found: $taskId');
+        return;
+      }
+      await _taskManager.resetTask(taskId, date: date);
+
+      // Remove energy from the pet
+      await _petManager.addEnergy(-task.energyReward.toDouble());
+
+      // Update day record
+      await _dayManager.uncompleteTask(taskId);
+    } catch (e) {
+      debugPrint('TaskController: Error completing task: $e');
+    }
+  }
+
   /// Reset a task (mark as incomplete)
   Future<void> resetTask(String taskId, {DateTime? date}) async {
     await _taskManager.resetTask(taskId, date: date);
@@ -71,8 +92,15 @@ class TaskController extends BaseController {
     int energyReward,
     TaskCategory category, {
     DateTime? date,
+    List<int>? repeatDayIndices,
   }) async {
-    await _taskManager.createTask(title, energyReward, category, date: date);
+    await _taskManager.createTask(
+      title,
+      energyReward,
+      category,
+      date: date,
+      repeatDayIndices: repeatDayIndices,
+    );
   }
 
   /// Update an existing task
@@ -82,6 +110,7 @@ class TaskController extends BaseController {
     int energyReward,
     TaskCategory category, {
     DateTime? date,
+    List<int>? repeatDayIndices,
   }) async {
     await _taskManager.updateTask(
       taskId,
@@ -89,6 +118,7 @@ class TaskController extends BaseController {
       energyReward,
       category,
       date: date,
+      repeatDayIndices: repeatDayIndices,
     );
   }
 

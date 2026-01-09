@@ -8,7 +8,7 @@ part of 'pet.dart';
 
 class PetAdapter extends TypeAdapter<Pet> {
   @override
-  final int typeId = 2;
+  final typeId = 2;
 
   @override
   Pet read(BinaryReader reader) {
@@ -60,7 +60,7 @@ class PetAdapter extends TypeAdapter<Pet> {
 
 class PetGrowthStageAdapter extends TypeAdapter<PetGrowthStage> {
   @override
-  final int typeId = 3;
+  final typeId = 3;
 
   @override
   PetGrowthStage read(BinaryReader reader) {
@@ -113,7 +113,7 @@ class PetGrowthStageAdapter extends TypeAdapter<PetGrowthStage> {
 
 class GenderAdapter extends TypeAdapter<Gender> {
   @override
-  final int typeId = 4;
+  final typeId = 4;
 
   @override
   Gender read(BinaryReader reader) {

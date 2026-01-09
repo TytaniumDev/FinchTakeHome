@@ -8,7 +8,7 @@ part of 'pet_energy.dart';
 
 class PetEnergyAdapter extends TypeAdapter<PetEnergy> {
   @override
-  final int typeId = 5;
+  final typeId = 5;
 
   @override
   PetEnergy read(BinaryReader reader) {

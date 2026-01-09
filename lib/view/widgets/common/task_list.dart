@@ -50,7 +50,7 @@ class TaskList extends StatelessWidget {
                   if (isCompleted == true) {
                     taskController.completeTask(task.id);
                   } else {
-                    taskController.resetTask(task.id);
+                    taskController.uncompleteTask(task.id);
                   }
                 },
               ),

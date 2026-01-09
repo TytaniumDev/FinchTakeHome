@@ -14,6 +14,7 @@ class Task extends HiveObject {
   int energyReward;
 
   @HiveField(4)
+  @Deprecated('Use completion status from Day entity instead')
   bool isCompleted;
 
   @HiveField(5)
@@ -25,6 +26,9 @@ class Task extends HiveObject {
   @HiveField(7)
   final DateTime createdDate;
 
+  @HiveField(8)
+  List<int>? repeatDayIndices;
+
   Task({
     required this.id,
     required this.title,
@@ -33,12 +37,14 @@ class Task extends HiveObject {
     this.completedAt,
     required this.category,
     DateTime? createdDate,
+    this.repeatDayIndices,
   }) : createdDate = createdDate ?? DateTime.now();
 
   factory Task.create({
     required String title,
     required int energyReward,
     required TaskCategory category,
+    List<int>? repeatDayIndices,
   }) {
     final now = DateTime.now();
     return Task(
@@ -47,6 +53,7 @@ class Task extends HiveObject {
       energyReward: energyReward,
       category: category,
       createdDate: now,
+      repeatDayIndices: repeatDayIndices,
     );
   }
 

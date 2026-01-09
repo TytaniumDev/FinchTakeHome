@@ -177,6 +177,41 @@ class DayManager extends BaseManager {
     }
   }
 
+  // TODO: Write a test for this
+  Future<void> uncompleteTask(String taskId) async {
+    if (_currentDay == null) {
+      debugPrint('DayManager: No current day to uncomplete task for');
+      return;
+    }
+
+    debugPrint('DayManager: Uncompleting task $taskId for current day');
+    try {
+      final currentDate = _dateTimeService.getCurrentDate();
+
+      await DayService.removeCompletedTask(currentDate, taskId);
+
+      Task? task;
+      for (var t in _currentDay!.dailyTasks) {
+        if (t.id == taskId) {
+          task = t;
+          break;
+        }
+      }
+
+      if (task != null) {
+        await DayService.addEnergyToDay(currentDate, -task.energyReward);
+        debugPrint('DayManager: Removed ${task.energyReward} energy from task');
+      }
+
+      await loadCurrentDay();
+
+      debugPrint('DayManager: Task completed successfully');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('DayManager: Error uncompleting task: $e');
+    }
+  }
+
   bool isTaskCompleted(String taskId) {
     return _currentDay?.isTaskCompleted(taskId) ?? false;
   }

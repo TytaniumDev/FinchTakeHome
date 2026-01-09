@@ -23,3 +23,17 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(UserAdapter());
   }
 }
+
+extension IsolatedHiveRegistrar on IsolatedHiveInterface {
+  void registerAdapters() {
+    registerAdapter(DayAdapter());
+    registerAdapter(GenderAdapter());
+    registerAdapter(PetAdapter());
+    registerAdapter(PetEnergyAdapter());
+    registerAdapter(PetGrowthStageAdapter());
+    registerAdapter(RainbowStonesAdapter());
+    registerAdapter(TaskAdapter());
+    registerAdapter(TaskCategoryAdapter());
+    registerAdapter(UserAdapter());
+  }
+}

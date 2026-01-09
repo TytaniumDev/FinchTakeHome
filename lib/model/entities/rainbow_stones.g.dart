@@ -8,7 +8,7 @@ part of 'rainbow_stones.dart';
 
 class RainbowStonesAdapter extends TypeAdapter<RainbowStones> {
   @override
-  final int typeId = 7;
+  final typeId = 7;
 
   @override
   RainbowStones read(BinaryReader reader) {

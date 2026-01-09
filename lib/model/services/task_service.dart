@@ -48,14 +48,60 @@ class TaskService {
       return null;
     }
   }
+  
+  static Future<List<Task>> getCurrentDayTasks() async {
+    debugPrint('TaskService: Getting current day tasks...');
+    final currentDate = ServiceLocator.dateTimeService.getCurrentDate();
+    return getTasksForDay(currentDate);
+  }
 
+  // TODO: Update test for this method
+  // Shouldn't this not have knowledge of DayService? This feels like it should go in the manager instead.
   static Future<List<Task>> getTasksForDay(DateTime date) async {
     debugPrint(
       'TaskService: Getting tasks for day: ${ServiceLocator.dateTimeService.generateDayId(date)}',
     );
     final day = await DayService.getOrCreate(date);
     debugPrint('TaskService: Found day record: ${day.id}');
-    debugPrint('TaskService: Number of tasks in day: ${day.dailyTasks.length}');
+    debugPrint(
+      'TaskService: Number of non-repeat tasks in day: ${day.dailyTasks.length}',
+    );
+
+    // Grab only tasks that have a repeat day on this day.
+    final weekdayInt = day.date.weekday;
+    debugPrint(
+      'TaskService: Finding repeating tasks for weekday # $weekdayInt',
+    );
+    final repeatTasksForDay = _getBox().values.where((task) {
+      if (task.repeatDayIndices != null) {
+        final repeatDayIndices = task.repeatDayIndices!;
+        return repeatDayIndices
+            .where((dayIndex) => dayIndex == weekdayInt)
+            .isNotEmpty;
+      }
+      return false;
+    }).toList();
+
+    // Add repeating tasks if they aren't already in the day's task list.
+    for (var repeatTask in repeatTasksForDay) {
+      final alreadyInDay = day.dailyTasks.any(
+        (task) => task.id == repeatTask.id,
+      );
+      if (!alreadyInDay) {
+        debugPrint(
+          'TaskService: Adding repeating task to day: ${repeatTask.title} (${repeatTask.id})',
+        );
+        day.dailyTasks.add(repeatTask);
+      } else {
+        debugPrint(
+          'TaskService: Repeating task already in day: ${repeatTask.title} (${repeatTask.id})',
+        );
+      }
+    }
+
+    debugPrint(
+      'TaskService: Number of total tasks in day: ${day.dailyTasks.length}',
+    );
 
     if (day.dailyTasks.isEmpty) {
       debugPrint('TaskService: No tasks found for this day');
@@ -69,23 +115,39 @@ class TaskService {
     return day.dailyTasks;
   }
 
-  static Future<List<Task>> getCurrentDayTasks() async {
-    debugPrint('TaskService: Getting current day tasks...');
-    final currentDate = ServiceLocator.dateTimeService.getCurrentDate();
-    return getTasksForDay(currentDate);
-  }
-
   static Future<Task> createTask({
     required String title,
     required int energyReward,
     required TaskCategory category,
     DateTime? date,
+    List<int>? repeatDayIndices,
   }) async {
     final task = Task.create(
       title: title,
       energyReward: energyReward,
       category: category,
+      repeatDayIndices: repeatDayIndices,
     );
+
+    await saveTask(task);
+    debugPrint('TaskService: Saved task to taskBox');
+
+    // With repeated tasks, the first task day may not be today.
+    // Only add to the day if the task is meant to appear today.
+    if (repeatDayIndices != null && repeatDayIndices.isNotEmpty) {
+      final todayWeekday = ServiceLocator.dateTimeService
+          .getCurrentDate()
+          .weekday;
+      final appearsToday = repeatDayIndices.any(
+        (dayIndex) => dayIndex == todayWeekday,
+      );
+      if (!appearsToday) {
+        debugPrint(
+          'TaskService: Task does not repeat today, skipping adding to day record',
+        );
+        return task;
+      }
+    }
 
     final targetDate = date ?? ServiceLocator.dateTimeService.getCurrentDate();
     debugPrint(
@@ -98,9 +160,6 @@ class TaskService {
 
     await DayService.addTaskToDay(targetDate, task);
     debugPrint('TaskService: Added task to day using DayService');
-
-    await saveTask(task);
-    debugPrint('TaskService: Saved task to taskBox');
 
     return task;
   }

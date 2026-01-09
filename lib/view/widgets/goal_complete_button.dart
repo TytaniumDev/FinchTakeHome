@@ -81,9 +81,12 @@ class _GoalCompleteButtonState extends State<GoalCompleteButton> {
 
   /// Builds the completed state icon.
   Widget _buildCompletedIcon() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      child: Icon(Icons.check_circle, size: 32, color: Colors.green),
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        child: Icon(Icons.check_circle, size: 32, color: Colors.green),
+      ),
     );
   }
 }
