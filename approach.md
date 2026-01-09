@@ -1,5 +1,6 @@
 # Approach
 
+Completed in 5.9 hours.
 [Code comparison](https://github.com/TytaniumDev/FinchTakeHome/compare/2bc64e6..d6bed6b)
 
 ## Notes
