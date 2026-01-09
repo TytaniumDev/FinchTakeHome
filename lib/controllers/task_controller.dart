@@ -1,7 +1,9 @@
 import 'package:birdo/controllers/base_controller.dart';
+import 'package:birdo/core/constants/rewards.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
+import 'package:birdo/model/managers/rainbow_stones_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:flutter/foundation.dart';
 
@@ -11,14 +13,17 @@ class TaskController extends BaseController {
   final TaskManager _taskManager;
   final PetManager _petManager;
   final DayManager _dayManager;
+  final RainbowStonesManager _rainbowStonesManager;
 
   TaskController({
     required TaskManager taskManager,
     required PetManager petManager,
     required DayManager dayManager,
+    required RainbowStonesManager rainbowStonesManager,
   }) : _taskManager = taskManager,
        _petManager = petManager,
-       _dayManager = dayManager;
+       _dayManager = dayManager,
+       _rainbowStonesManager = rainbowStonesManager;
 
   @override
   Future<void> onInitialize() async {}
@@ -52,6 +57,22 @@ class TaskController extends BaseController {
       // Update day record
       await _dayManager.completeTask(taskId);
 
+      // Award rainbow stones for task completion (if applicable)
+      if (task.category == TaskCategory.productivity) {
+        await _rainbowStonesManager.awardTaskCompletionStones(
+          productivityTaskCompletionReward,
+        );
+        await _dayManager.addRainbowStones(productivityTaskCompletionReward);
+      }
+
+      // Award additional rainbow stones if the task is a repeating task
+      if (task.repeatDayIndices?.isNotEmpty ?? false) {
+        await _rainbowStonesManager.awardTaskCompletionStones(
+          repeatedTaskCompletionReward,
+        );
+        await _dayManager.addRainbowStones(repeatedTaskCompletionReward);
+      }
+
       debugPrint(
         'TaskController: Task completed and energy added to pet and day: $taskId',
       );
@@ -72,10 +93,27 @@ class TaskController extends BaseController {
       await _taskManager.resetTask(taskId, date: date);
 
       // Remove energy from the pet
-      await _petManager.addEnergy(-task.energyReward.toDouble());
+      await _petManager.removeEnergy(task.energyReward.toDouble());
 
       // Update day record
       await _dayManager.uncompleteTask(taskId);
+
+      // Remove rainbow stones for task completion (if applicable)
+      if (task.category == TaskCategory.productivity) {
+        await _rainbowStonesManager.removeTaskCompletionStones(
+          productivityTaskCompletionReward,
+        );
+        await _dayManager.addRainbowStones(productivityTaskCompletionReward);
+      }
+
+      // Remove additional rainbow stones if the task is a repeating task
+      if (task.repeatDayIndices?.isNotEmpty ?? false) {
+        await _rainbowStonesManager.removeTaskCompletionStones(
+          repeatedTaskCompletionReward,
+        );
+        await _dayManager.addRainbowStones(repeatedTaskCompletionReward);
+      }
+
     } catch (e) {
       debugPrint('TaskController: Error completing task: $e');
     }

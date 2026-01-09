@@ -34,6 +34,14 @@ class RainbowStonesService {
     await saveRainbowStones(stones);
     debugPrint('RainbowStonesService: New balance: ${stones.currentAmount}');
   }
+  
+  static Future<void> removeStones(int amount) async {
+    debugPrint('RainbowStonesService: Removing $amount stones');
+    final stones = await getCurrentBalance();
+    stones.removeStones(amount);
+    await saveRainbowStones(stones);
+    debugPrint('RainbowStonesService: New balance: ${stones.currentAmount}');
+  }
 
   static Future<bool> spendStones(int amount) async {
     debugPrint('RainbowStonesService: Attempting to spend $amount stones');

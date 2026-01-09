@@ -13,7 +13,7 @@ class EnergyIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<DayManager, PetManager>(
       builder: (context, dayManager, petManager, child) {
-        final currentEnergy = dayManager.getTotalEnergy();
+        final currentEnergy = petManager.currentEnergy;
         final maxEnergy = petManager.maxEnergy;
         final percentage = currentEnergy / maxEnergy;
         final isFull = currentEnergy >= maxEnergy;

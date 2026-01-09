@@ -58,6 +58,12 @@ class RainbowStones extends HiveObject {
     lastUpdated = _dateTimeService.getCurrentDate();
   }
 
+  void removeStones(int amount) {
+    currentAmount -= amount;
+    totalEarned -= amount;
+    lastUpdated = _dateTimeService.getCurrentDate();
+  }
+
   bool spendStones(int amount) {
     if (currentAmount >= amount) {
       currentAmount -= amount;

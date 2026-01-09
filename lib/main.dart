@@ -128,6 +128,7 @@ class _BirdoTasksState extends State<BirdoTasks> {
                 taskManager: context.read<TaskManager>(),
                 petManager: context.read<PetManager>(),
                 dayManager: context.read<DayManager>(),
+            rainbowStonesManager: context.read<RainbowStonesManager>(),
               ),
         ),
         Provider(

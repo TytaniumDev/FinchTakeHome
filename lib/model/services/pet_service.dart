@@ -108,6 +108,14 @@ class PetService {
 
     await savePet(pet);
   }
+  
+  static Future<void> removeEnergy(Pet pet, double amount) async {
+    debugPrint('PetService: Removing energy from pet: $amount');
+
+    pet.energy.removeEnergy(amount);
+
+    await savePet(pet);
+  }
 
   static Future<void> checkIn(Pet pet) async {
     debugPrint('PetService: Checking in pet');

@@ -68,45 +68,6 @@ class HomeController extends BaseController {
     }
   }
 
-  /// Complete a task from the home screen
-  Future<void> completeTask(String taskId) async {
-    try {
-      // Get the task to determine energy reward
-      final task = await _taskManager.getTask(taskId);
-      if (task == null) {
-        debugPrint('HomeController: Task not found: $taskId');
-        return;
-      }
-
-      // Complete the task
-      await _taskManager.completeTask(taskId);
-
-      // Add energy to the pet
-      await _petManager.addEnergy(task.energyReward.toDouble());
-
-      // Update day record
-      await _dayManager.completeTask(taskId);
-
-      // Award rainbow stones for task completion (if applicable)
-      if (task.category == TaskCategory.productivity) {
-        const int goalCompletionReward = 10;
-        await _rainbowStonesManager.awardTaskCompletionStones(
-          goalCompletionReward,
-        );
-        await _dayManager.addRainbowStones(goalCompletionReward);
-      }
-
-      // Check if pet is ready to evolve
-      if (_petManager.isReadyToEvolve) {
-        debugPrint('HomeController: Pet is ready to evolve!');
-      }
-
-      debugPrint('HomeController: Task completed successfully: ${task.title}');
-    } catch (e) {
-      debugPrint('HomeController: Error completing task: $e');
-    }
-  }
-
   /// Evolve the pet if it's ready
   Future<void> evolvePet() async {
     try {

@@ -59,6 +59,13 @@ class PetEnergy {
     lastUpdatedTime = _dateTimeService.getCurrentDate();
   }
 
+  void removeEnergy(double amount) {
+    currentEnergy = (currentEnergy - amount).clamp(0.0, maxEnergy);
+    totalEnergyEarned -= amount;
+    lastUpdatedTime = _dateTimeService.getCurrentDate();
+  }
+
+
   void increaseMaxEnergy(double amount) {
     maxEnergy += amount;
     lastUpdatedTime = _dateTimeService.getCurrentDate();

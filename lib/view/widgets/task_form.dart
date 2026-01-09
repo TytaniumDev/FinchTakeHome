@@ -1,4 +1,5 @@
 import 'package:birdo/controllers/task_controller.dart';
+import 'package:birdo/core/constants/rewards.dart';
 import 'package:birdo/core/theme/app_theme.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/task_manager.dart';
@@ -6,6 +7,7 @@ import 'package:birdo/view/widgets/common/chunky_button.dart';
 import 'package:birdo/view/widgets/common/chunky_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 
 class TaskFormDialog extends StatelessWidget {
@@ -326,6 +328,27 @@ class RepeatSelectionFormField extends FormField<RepeatOption> {
                  style: AppTheme.typography.subtitle1,
                  textAlign: TextAlign.left,
                ),
+               RichText(
+                 text: TextSpan(
+                   text: '+$repeatedTaskCompletionReward ',
+                   style: AppTheme.typography.subtitle2,
+                   children: [
+                     WidgetSpan(
+                       child: SvgPicture.asset(
+                         'lib/assets/icons/rainbow-stones.svg',
+                         height: 16,
+                         width: 16,
+                         placeholderBuilder: (BuildContext context) => Icon(
+                           Icons.stars,
+                           size: 16,
+                           color: Colors.purple.shade700,
+                         ),
+                       ),
+                     ),
+                     TextSpan(text: ' bonus for doing repeated tasks!'),
+                   ],
+                 ),
+               ),
                SizedBox(height: AppTheme.spacing.small),
                CupertinoSlidingSegmentedControl(
                  onValueChanged: (RepeatOption? value) {
@@ -393,39 +416,46 @@ class DayRepeatFormField extends FormField<List<int>> {
            );
 
            return InputDecorator(
+
              decoration: InputDecoration(
                errorText: state.errorText,
                border: InputBorder.none,
+               focusedBorder: InputBorder.none,
+               enabledBorder: InputBorder.none,
+               disabledBorder: InputBorder.none,
+               errorBorder: InputBorder.none,
                contentPadding: EdgeInsets.zero,
              ),
-             child: ToggleButtons(
-               isSelected: selectedDays,
-               constraints: BoxConstraints(minWidth: 36, minHeight: 36),
-               onPressed: (int index) {
-                 // Toggle the day being selected.
-                 selectedDays[index] = !selectedDays[index];
-                 final selectedDayIndices = <int>[];
+             child: Center(
+               child: ToggleButtons(
+                 isSelected: selectedDays,
+                 constraints: BoxConstraints(minWidth: 36, minHeight: 36),
+                 onPressed: (int index) {
+                   // Toggle the day being selected.
+                   selectedDays[index] = !selectedDays[index];
+                   final selectedDayIndices = <int>[];
 
-                 // Convert back to a list of selected day indices with the now
-                 // correctly updated selectedDays list.
-                 for (int i = 0; i < selectedDays.length; i++) {
-                   if (selectedDays[i]) {
-                     selectedDayIndices.add(i + 1);
+                   // Convert back to a list of selected day indices with the now
+                   // correctly updated selectedDays list.
+                   for (int i = 0; i < selectedDays.length; i++) {
+                     if (selectedDays[i]) {
+                       selectedDayIndices.add(i + 1);
+                     }
                    }
-                 }
 
-                 onChanged(selectedDayIndices);
-                 state.didChange(selectedDayIndices);
-               },
-               fillColor: AppTheme.colors.primary,
-               selectedColor: AppTheme.colors.onSurface,
-               renderBorder: false,
-
-               children: List.generate(
-                 DateTime.daysPerWeek,
-                 (index) => WeekdayButton(
-                   label: weekdayLabels[index],
-                   selected: selectedDays[index],
+                   onChanged(selectedDayIndices);
+                   state.didChange(selectedDayIndices);
+                 },
+                 fillColor: AppTheme.colors.primary,
+                 selectedColor: AppTheme.colors.onSurface,
+                 renderBorder: true,
+                 borderRadius: BorderRadius.circular(AppTheme.radius.medium),
+                 children: List.generate(
+                   DateTime.daysPerWeek,
+                   (index) => WeekdayButton(
+                     label: weekdayLabels[index],
+                     selected: selectedDays[index],
+                   ),
                  ),
                ),
              ),
@@ -442,6 +472,6 @@ class WeekdayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(label, style: TextStyle(fontSize: 12));
+    return Text(label, style: TextStyle(fontSize: 13));
   }
 }

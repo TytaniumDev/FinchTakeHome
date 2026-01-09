@@ -133,6 +133,25 @@ class PetManager extends BaseManager {
     }
   }
 
+  Future<void> removeEnergy(double amount) async {
+    if (_currentPet == null) {
+      debugPrint('PetManager: No pet to remove energy to');
+      return;
+    }
+
+    debugPrint('PetManager: Removing energy from pet: $amount');
+    try {
+      await PetService.removeEnergy(_currentPet!, amount);
+      await loadCurrentPet();
+
+      debugPrint('PetManager: Energy removed successfully');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('PetManager: Error removing energy: $e');
+    }
+  }
+
+
   bool hasCheckedInToday() {
     return _currentPet?.hasCheckedInToday() ?? false;
   }

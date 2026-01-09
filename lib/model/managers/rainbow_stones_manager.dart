@@ -46,6 +46,19 @@ class RainbowStonesManager extends BaseManager {
     }
   }
 
+  Future<void> removeStones(int amount) async {
+    debugPrint('RainbowStonesManager: Removing stones: $amount');
+    try {
+      await RainbowStonesService.removeStones(amount);
+
+      await loadRainbowStones();
+
+      debugPrint('RainbowStonesManager: Stones removed successfully');
+    } catch (e) {
+      debugPrint('RainbowStonesManager: Error removing stones: $e');
+    }
+  }
+
   Future<bool> spendStones(int amount) async {
     debugPrint('RainbowStonesManager: Spending stones: $amount');
     try {
@@ -89,6 +102,23 @@ class RainbowStonesManager extends BaseManager {
     } catch (e) {
       debugPrint(
         'RainbowStonesManager: Error awarding task completion stones: $e',
+      );
+    }
+  }
+
+  Future<void> removeTaskCompletionStones(int amount) async {
+    debugPrint(
+      'RainbowStonesManager: Removing task completion stones: $amount',
+    );
+    try {
+      await removeStones(amount);
+
+      debugPrint(
+        'RainbowStonesManager: Task completion stones removed successfully',
+      );
+    } catch (e) {
+      debugPrint(
+        'RainbowStonesManager: Error removing task completion stones: $e',
       );
     }
   }

@@ -3,6 +3,8 @@
 I'm going to keep this document as notes, chronologically, as I go through
 implementing this challenge.
 
+# Day 1
+
 ## Adding repetition
 
 ### task.dart
@@ -128,3 +130,45 @@ I'd like to improve the WeekdayButton and DayRepeatFormField widgets, they don't
 I managed to get the task creation working and manually validated that the day repetition code works! I just need to fix the task_list.dart to use the Day's version of a completed task instead of the Task's deprecated version of it.
 
 -- Stopping on the first day, time elapsed: 3 hours 43 mins
+
+# Day 2
+
+I'm going to start with trying to fix the task_list.dart's version of a "complete task" to have the Day be the source of truth.
+That's actually more complicated than I thought, the task list only relies on the TaskManager (correctly) so I kinda need to have the task itself be the source of truth.
+
+I checked the Finch app to see how repeats are handled, and if looks like if a task is completed, editing the task doesn't change the past completed ones, but it does change the future ones. It's like once a task is completed, it locks it in to that day forever.
+
+## Repeating Tasks
+
+### task_list.dart, day.dart, day_manager.dart
+
+I added a list of the completed task ids to the day manager so we can rebuild the UI based on that info. I then also added a select listener in task_list that grabs JUST the completed task ids, and then passed the completed state to the task card.
+
+I don't super love this because it adds some business logic (kinda?) to the UI, in that the TaskList now has knowledge that a "completed task id" means that the task is "completed". It's not that much of a stretch, so I'm fine with it for now.
+
+## Promoting recurring tasks
+
+### task_controller.dart
+I'm going to use the rainbow stones as the way to entice the user to make recurring goals. Filling the day's energy is relatively trivial and would happen normally, and has a ceiling to the amount of reward the user will feel.
+I'm assuming rainbow stones act like they do in the Finch app and are used as a sort of extra currency you can use to improve your experience in the app. There's a business cost and diminishing returns if we're too generous with them, so I'm going to just add 2 stones for every repeated task a user completes. That value could be adjusted, it's hard to tell without knowing how much we value the daily sign on (+5 stones). I could see upping the value to 5 stones or something like that.
+
+Nevermind, I see that productivity tasks award 10 stones for completion, so I think 5 stones per repeated task completion is a fine balance. That way we keep with nice multiples of 5 as well.
+I made this change in the home_controller.dart, and I found more confusing architectural decisions? Or just bugs? The home controller has a complete task function that doesn't appear to be called, but that's where the stone rewards are happening.
+
+I'm going to make the TaskList use the homeController instead of the taskController? Or I'll add the homeController functionality to the TaskController, which actually does seem better. The gaining of stones etc shouldn't be based on if the user is "on the home screen" or not.
+Yeah, the home controller version of the completeTask is never used, I'm just going to delete it and move the relevant stuff to task controller.
+
+Right now I'm removing stones/pet energy/etc when undoing a task, but it should really just be setting the next completion of that task to give 0 of that resource. There are better ways to do this, but I'm not going to spend the time to figure it out currently as it's not a main objective.
+
+### Bug Fix
+
+Fixed a bug in energy_indicator.dart, it was using the dayManager's total energy field instead of the pet's current energy field for displaying the total energy, so it would often overflow/underflow. 
+Again, an indication that architecturaly the concept of a "Day" may be too large or it needs to have more referential relationships to other data and not maintain its own version of stuff, like tasks and pet data.
+
+### UI improvements
+
+Now that the logic for the stones for repeated tasks is working, I'll update the UI to let the user know it's a benefit. It'll be added to the task creation screen.
+
+Relatively straightforward to add the text with a nice textspan for the rainbow stones icon.
+
+I think this is all done now! Just need to write tests and a summary of what changes I made.

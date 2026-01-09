@@ -8,12 +8,14 @@ class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
   final ValueChanged<bool?>? onCheckboxChanged;
+  final bool isCompleted;
 
   const TaskCard({
     super.key,
     required this.task,
     this.onTap,
     this.onCheckboxChanged,
+    required this.isCompleted,
   });
 
   @override
@@ -27,20 +29,18 @@ class TaskCard extends StatelessWidget {
       ),
       child: ChunkyTaskCard(
         title: task.title,
-        isCompleted: task.isCompleted,
+        isCompleted: isCompleted,
         onTap: onTap,
-        onComplete:
-            onCheckboxChanged != null
-                ? () => onCheckboxChanged!(!task.isCompleted)
-                : null,
+        onComplete: onCheckboxChanged != null
+            ? () => onCheckboxChanged!(!isCompleted)
+            : null,
         categoryColor: categoryColor,
-        completeButton:
-            onCheckboxChanged != null
-                ? GoalCompleteButton(
-                  isCompleted: task.isCompleted,
-                  onTap: () => onCheckboxChanged!(!task.isCompleted),
-                )
-                : null,
+        completeButton: onCheckboxChanged != null
+            ? GoalCompleteButton(
+                isCompleted: isCompleted,
+                onTap: () => onCheckboxChanged!(!isCompleted),
+              )
+            : null,
       ),
     );
   }
@@ -63,12 +63,14 @@ class AnimatedTaskCard extends StatefulWidget {
   final Task task;
   final VoidCallback? onTap;
   final ValueChanged<bool?>? onCheckboxChanged;
+  final bool isCompleted;
 
   const AnimatedTaskCard({
     super.key,
     required this.task,
     this.onTap,
     this.onCheckboxChanged,
+    required this.isCompleted,
   });
 
   @override
@@ -97,7 +99,7 @@ class _AnimatedTaskCardState extends State<AnimatedTaskCard>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    if (widget.task.isCompleted) {
+    if (widget.isCompleted) {
       _animationController.value = 1.0;
     }
   }
@@ -106,8 +108,8 @@ class _AnimatedTaskCardState extends State<AnimatedTaskCard>
   void didUpdateWidget(AnimatedTaskCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.task.isCompleted != widget.task.isCompleted) {
-      if (widget.task.isCompleted) {
+    if (oldWidget.isCompleted != widget.isCompleted) {
+      if (widget.isCompleted) {
         _animationController.forward();
       } else {
         _animationController.reverse();
@@ -139,24 +141,19 @@ class _AnimatedTaskCardState extends State<AnimatedTaskCard>
               ),
               child: ChunkyTaskCard(
                 title: widget.task.title,
-                isCompleted: widget.task.isCompleted,
+                isCompleted: widget.isCompleted,
                 onTap: widget.onTap,
-                onComplete:
-                    widget.onCheckboxChanged != null
-                        ? () =>
-                            widget.onCheckboxChanged!(!widget.task.isCompleted)
-                        : null,
+                onComplete: widget.onCheckboxChanged != null
+                    ? () => widget.onCheckboxChanged!(!widget.isCompleted)
+                    : null,
                 categoryColor: categoryColor,
-                completeButton:
-                    widget.onCheckboxChanged != null
-                        ? GoalCompleteButton(
-                          isCompleted: widget.task.isCompleted,
-                          onTap:
-                              () => widget.onCheckboxChanged!(
-                                !widget.task.isCompleted,
-                              ),
-                        )
-                        : null,
+                completeButton: widget.onCheckboxChanged != null
+                    ? GoalCompleteButton(
+                        isCompleted: widget.isCompleted,
+                        onTap: () =>
+                            widget.onCheckboxChanged!(!widget.isCompleted),
+                      )
+                    : null,
               ),
             ),
           ),

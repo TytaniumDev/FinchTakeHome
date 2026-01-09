@@ -1,4 +1,5 @@
 import 'package:birdo/controllers/task_controller.dart';
+import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:birdo/view/widgets/task_card.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,12 @@ class TaskList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final completedTaskIds = context.select(
+      (DayManager manager) => manager.completedTaskIds,
+    );
+
     return Consumer<TaskManager>(
+      // We rebuild the task list whenever a single task changes
       builder: (context, taskManager, child) {
         // Get the task controller
         final taskController = Provider.of<TaskController>(context, listen: false);
@@ -43,7 +49,7 @@ class TaskList extends StatelessWidget {
         } else {
           for (var task in tasks) {
             children.add(
-              TaskCard(
+              AnimatedTaskCard(
                 task: task,
                 onTap: onTaskTap,
                 onCheckboxChanged: (isCompleted) {
@@ -53,6 +59,7 @@ class TaskList extends StatelessWidget {
                     taskController.uncompleteTask(task.id);
                   }
                 },
+                isCompleted: completedTaskIds.contains(task.id),
               ),
             );
           }

@@ -57,6 +57,10 @@ class Day extends HiveObject {
 
   int getTotalEnergy() => energy;
 
+  List<String> getCompletedTaskIds() {
+    return completedTaskIds;
+  }
+
   void addEnergy(int amount) {
     energy += amount;
   }
