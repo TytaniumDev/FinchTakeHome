@@ -1,5 +1,7 @@
 # Approach
 
+[Code comparison](https://github.com/TytaniumDev/FinchTakeHome/compare/2bc64e6..d6bed6b)
+
 ## Notes
 
 My detailed thoughts are in coding_notes.md.
