@@ -56,7 +56,7 @@ void main() {
 
       expect(rainbowStones.currentAmount, equals(15));
       expect(rainbowStones.totalEarned, equals(25));
-      expect(rainbowStones.lastUpdated.isAfter(before), isTrue);
+      expect(rainbowStones.lastUpdated.compareTo(before), isNonNegative);
 
       // Adding negative stones (edge case)
       final before2 = rainbowStones.lastUpdated;
@@ -64,7 +64,7 @@ void main() {
 
       expect(rainbowStones.currentAmount, equals(12));
       expect(rainbowStones.totalEarned, equals(22));
-      expect(rainbowStones.lastUpdated.isAfter(before2), isTrue);
+      expect(rainbowStones.lastUpdated.compareTo(before2), isNonNegative);
     });
 
     test('spendStones correctly spends stones and returns success/failure', () {
@@ -78,7 +78,7 @@ void main() {
 
       expect(success, isTrue);
       expect(rainbowStones.currentAmount, equals(5));
-      expect(rainbowStones.lastUpdated.isAfter(before), isTrue);
+      expect(rainbowStones.lastUpdated.compareTo(before), isNonNegative);
 
       // Failed spend (not enough stones)
       final before2 = rainbowStones.lastUpdated;
@@ -94,7 +94,7 @@ void main() {
 
       expect(exactSuccess, isTrue);
       expect(rainbowStones.currentAmount, equals(0));
-      expect(rainbowStones.lastUpdated.isAfter(before3), isTrue);
+      expect(rainbowStones.lastUpdated.compareTo(before3), isNonNegative);
 
       // Zero amount spend (edge case)
       final before4 = rainbowStones.lastUpdated;
@@ -102,7 +102,7 @@ void main() {
 
       expect(zeroSuccess, isTrue);
       expect(rainbowStones.currentAmount, equals(0));
-      expect(rainbowStones.lastUpdated.isAfter(before4), isTrue);
+      expect(rainbowStones.lastUpdated.compareTo(before4), isNonNegative);
     });
 
     test('getCurrentBalance returns correct balance', () {

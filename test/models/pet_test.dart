@@ -156,7 +156,7 @@ void main() {
       pet.checkIn();
       final after = pet.lastCheckInTime;
       
-      expect(after.isAfter(before), isTrue);
+      expect(after.compareTo(before), isNonNegative);
     });
     
     test('hasCheckedInToday correctly identifies if pet has checked in today', () {

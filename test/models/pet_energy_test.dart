@@ -155,21 +155,21 @@ void main() {
         petEnergy.setCurrentEnergy(10);
 
         expect(petEnergy.currentEnergy, equals(10.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before), isNonNegative);
 
         // Energy below 0 should be clamped to 0
         final before2 = petEnergy.lastUpdatedTime;
         petEnergy.setCurrentEnergy(-5);
 
         expect(petEnergy.currentEnergy, equals(0.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before2), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before2), isNonNegative);
 
         // Energy above max should be clamped to max
         final before3 = petEnergy.lastUpdatedTime;
         petEnergy.setCurrentEnergy(20);
 
         expect(petEnergy.currentEnergy, equals(15.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before3), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before3), isNonNegative);
       },
     );
 
@@ -192,32 +192,32 @@ void main() {
 
         petEnergy.setMaxEnergyForGrowthStage(PetGrowthStage.egg);
         expect(petEnergy.maxEnergy, equals(15.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before), isNonNegative);
 
         final before2 = petEnergy.lastUpdatedTime;
         petEnergy.setMaxEnergyForGrowthStage(PetGrowthStage.baby);
         expect(petEnergy.maxEnergy, equals(20.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before2), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before2), isNonNegative);
 
         final before3 = petEnergy.lastUpdatedTime;
         petEnergy.setMaxEnergyForGrowthStage(PetGrowthStage.toddler);
         expect(petEnergy.maxEnergy, equals(25.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before3), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before3), isNonNegative);
 
         final before4 = petEnergy.lastUpdatedTime;
         petEnergy.setMaxEnergyForGrowthStage(PetGrowthStage.child);
         expect(petEnergy.maxEnergy, equals(30.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before4), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before4), isNonNegative);
 
         final before5 = petEnergy.lastUpdatedTime;
         petEnergy.setMaxEnergyForGrowthStage(PetGrowthStage.teenager);
         expect(petEnergy.maxEnergy, equals(40.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before5), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before5), isNonNegative);
 
         final before6 = petEnergy.lastUpdatedTime;
         petEnergy.setMaxEnergyForGrowthStage(PetGrowthStage.adult);
         expect(petEnergy.maxEnergy, equals(50.0));
-        expect(petEnergy.lastUpdatedTime.isAfter(before6), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before6), isNonNegative);
       },
     );
   });

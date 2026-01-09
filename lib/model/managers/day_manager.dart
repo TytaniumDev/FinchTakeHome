@@ -181,7 +181,6 @@ class DayManager extends BaseManager {
     }
   }
 
-  // TODO: Write a test for this
   Future<void> uncompleteTask(String taskId) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to uncomplete task for');

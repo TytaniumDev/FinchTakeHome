@@ -40,7 +40,6 @@ void main() {
         title: 'Test Task',
         energyReward: 5,
       );
-
       testDay = TestFactory.createTestDay(
         id: '2023-01-01',
         date: DateTime(2023, 1, 1),
@@ -220,5 +219,79 @@ void main() {
 
       expect(result, isNull);
     });
+
+    test('getTasksForDay includes daily repeating tasks', () async {
+      final testDailyRepeatTask = TestFactory.createTestTask(
+        id: 'test-repeat-task-id',
+        title: 'Test Repeat Task',
+        energyReward: 5,
+        repeatDayIndices: [
+          DateTime.monday,
+          DateTime.tuesday,
+          DateTime.wednesday,
+          DateTime.thursday,
+          DateTime.friday,
+          DateTime.saturday,
+          DateTime.sunday,
+        ],
+      );
+
+      await taskBox.put(testDailyRepeatTask.id, testDailyRepeatTask);
+      await dayBox.put(testDay.id, testDay);
+
+      final result = await TaskService.getTasksForDay(testDay.date);
+
+      // Test day has a built in task
+      expect(result.length, equals(2));
+      expect(result.any((task) => task.id == testDailyRepeatTask.id), isTrue);
+    });
+
+    test(
+      'getTasksForDay includes weekly repeating task on the day it repeats',
+      () async {
+        final testWeeklyRepeatTask = TestFactory.createTestTask(
+          id: 'test-repeat-task-id',
+          title: 'Test Repeat Task',
+          energyReward: 5,
+          repeatDayIndices: [testDay.date.weekday],
+        );
+
+        await taskBox.put(testWeeklyRepeatTask.id, testWeeklyRepeatTask);
+        await dayBox.put(testDay.id, testDay);
+
+        final result = await TaskService.getTasksForDay(testDay.date);
+
+        // Test day has a built in task
+        expect(result.length, equals(2));
+        expect(
+          result.any((task) => task.id == testWeeklyRepeatTask.id),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'getTasksForDay does not include weekly repeating task on the day it repeats',
+      () async {
+        final testWeeklyRepeatTask = TestFactory.createTestTask(
+          id: 'test-repeat-task-id',
+          title: 'Test Repeat Task',
+          energyReward: 5,
+          repeatDayIndices: [testDay.date.weekday + 1],
+        );
+
+        await taskBox.put(testWeeklyRepeatTask.id, testWeeklyRepeatTask);
+        await dayBox.put(testDay.id, testDay);
+
+        final result = await TaskService.getTasksForDay(testDay.date);
+
+        // Test day has a built in task
+        expect(result.length, equals(1));
+        expect(
+          result.any((task) => task.id == testWeeklyRepeatTask.id),
+          isFalse,
+        );
+      },
+    );
   });
 }

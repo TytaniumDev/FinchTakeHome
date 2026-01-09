@@ -55,7 +55,6 @@ class TaskService {
     return getTasksForDay(currentDate);
   }
 
-  // TODO: Update test for this method
   // Shouldn't this not have knowledge of DayService? This feels like it should go in the manager instead.
   static Future<List<Task>> getTasksForDay(DateTime date) async {
     debugPrint(

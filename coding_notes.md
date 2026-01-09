@@ -129,7 +129,7 @@ I'd like to improve the WeekdayButton and DayRepeatFormField widgets, they don't
 
 I managed to get the task creation working and manually validated that the day repetition code works! I just need to fix the task_list.dart to use the Day's version of a completed task instead of the Task's deprecated version of it.
 
--- Stopping on the first day, time elapsed: 3 hours 43 mins
+#### Stopping on the first day, time elapsed: 3 hours 43 mins
 
 # Day 2
 
@@ -172,3 +172,21 @@ Now that the logic for the stones for repeated tasks is working, I'll update the
 Relatively straightforward to add the text with a nice textspan for the rainbow stones icon.
 
 I think this is all done now! Just need to write tests and a summary of what changes I made.
+
+#### Day 2 time: 1 hour 41 mins
+
+# Total time: 5.4 hours
+
+# Day 2 Part 2 - Tests
+
+Spending some time writing/fixing tests before introducing AI to do some larger changes. A few of the tests failed because they had timing race conditions, so I fixed those by checking for a timestamp >= the current time rather than a strict >. A larger check would be needed, I'm sure there are usages in other tests and I didn't do a full search for the issue.
+
+I'm writing tests for the task_service now that getTasksForDay injects repeated tasks into the day at that point rather than before.
+
+I am still missing tests for some new functions I wrote, but I'm out of the recommended time and the tests are trivial to write, as they're just for the uncomplete/subtract functions I added for undoing task completion.
+
+-- Time spent writing and updating tests: 30min
+
+#### Day 2 part 2 time: 30 mins
+
+# Total time with tests: 5.9 hours
