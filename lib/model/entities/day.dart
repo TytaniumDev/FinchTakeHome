@@ -1,5 +1,4 @@
 import 'package:birdo/core/services/service_locator.dart';
-import 'package:birdo/model/entities/task.dart';
 import 'package:hive_ce/hive.dart';
 
 part 'day.g.dart';
@@ -22,7 +21,7 @@ class Day extends HiveObject {
   List<String> completedTaskIds;
 
   @HiveField(5)
-  List<Task> dailyTasks;
+  List<String> dailyTaskIds;
 
   @HiveField(7)
   int rainbowStonesEarned;
@@ -33,10 +32,10 @@ class Day extends HiveObject {
     this.checkedIn = false,
     this.energy = 0,
     List<String>? completedTaskIds,
-    List<Task>? dailyTasks,
+    List<String>? dailyTaskIds,
     this.rainbowStonesEarned = 0,
   }) : completedTaskIds = completedTaskIds ?? [],
-       dailyTasks = dailyTasks ?? [];
+       dailyTaskIds = dailyTaskIds ?? [];
 
   factory Day.create(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
@@ -48,7 +47,7 @@ class Day extends HiveObject {
       checkedIn: false,
       energy: 0,
       completedTaskIds: [],
-      dailyTasks: [],
+      dailyTaskIds: [],
       rainbowStonesEarned: 0,
     );
   }
@@ -110,9 +109,9 @@ class Day extends HiveObject {
     print('  Energy: $energy');
     print('  Rainbow Stones: $rainbowStonesEarned');
     print('  Completed Task IDs: $completedTaskIds');
-    print('  Daily Tasks: ${dailyTasks.length}');
-    for (var task in dailyTasks) {
-      print('    - ${task.title} (${task.id})');
+    print('  Daily Task IDs: ${dailyTaskIds.length}');
+    for (var taskId in dailyTaskIds) {
+      print('    - $taskId');
     }
   }
 }

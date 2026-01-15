@@ -1,7 +1,6 @@
 import 'package:birdo/core/constants/hive_boxes.dart';
 import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/model/entities/day.dart';
-import 'package:birdo/model/entities/task.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive.dart';
 
@@ -47,7 +46,7 @@ class DayService {
         checkedIn: false,
         energy: 0,
         completedTaskIds: [],
-        dailyTasks: [],
+        dailyTaskIds: [],
       );
       await saveDay(day);
       debugPrint('DayService: Created and saved new day record: ${day.id}');
@@ -139,19 +138,11 @@ class DayService {
     }
   }
 
-  static Future<void> addTaskToDay(DateTime date, Task task) async {
-    debugPrint('DayService: Adding task ${task.id} to date: $date');
+  static Future<void> addTaskToDay(DateTime date, String taskId) async {
+    debugPrint('DayService: Adding task $taskId to date: $date');
     final day = await getOrCreate(date);
-    day.dailyTasks.add(task);
-    await saveDay(day);
-  }
-
-  static Future<void> updateTaskInDay(DateTime date, Task task) async {
-    debugPrint('DayService: Updating task ${task.id} in date: $date');
-    final day = await getOrCreate(date);
-    final taskIndex = day.dailyTasks.indexWhere((t) => t.id == task.id);
-    if (taskIndex != -1) {
-      day.dailyTasks[taskIndex] = task;
+    if (!day.dailyTaskIds.contains(taskId)) {
+      day.dailyTaskIds.add(taskId);
       await saveDay(day);
     }
   }
@@ -160,7 +151,7 @@ class DayService {
     debugPrint('DayService: Removing task $taskId from date: $date');
     final day = await getDayRecord(date);
     if (day != null) {
-      day.dailyTasks.removeWhere((t) => t.id == taskId);
+      day.dailyTaskIds.remove(taskId);
       await saveDay(day);
     }
   }

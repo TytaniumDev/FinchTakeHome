@@ -1,9 +1,9 @@
 import 'package:birdo/core/services/date_time_service.dart';
 import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/model/entities/day.dart';
-import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/base_manager.dart';
 import 'package:birdo/model/services/day_service.dart';
+import 'package:birdo/model/services/task_service.dart';
 import 'package:flutter/foundation.dart';
 
 class DayManager extends BaseManager {
@@ -126,16 +126,16 @@ class DayManager extends BaseManager {
     }
   }
 
-  Future<void> addTaskToDay(Task task) async {
+  Future<void> addTaskToDay(String taskId) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to add task to');
       return;
     }
 
-    debugPrint('DayManager: Adding task ${task.id} to current day');
+    debugPrint('DayManager: Adding task $taskId to current day');
     try {
       final currentDate = _dateTimeService.getCurrentDate();
-      await DayService.addTaskToDay(currentDate, task);
+      await DayService.addTaskToDay(currentDate, taskId);
       await loadCurrentDay();
 
       debugPrint('DayManager: Task added to day successfully');
@@ -145,7 +145,7 @@ class DayManager extends BaseManager {
     }
   }
 
-  Future<void> completeTask(String taskId) async {
+  Future<void> completeTask(String taskId, {int? energyReward}) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to complete task for');
       return;
@@ -159,17 +159,18 @@ class DayManager extends BaseManager {
 
       await DayService.completeTask(currentDate, taskId);
 
-      Task? task;
-      for (var t in _currentDay!.dailyTasks) {
-        if (t.id == taskId) {
-          task = t;
-          break;
+      // Fetch task to get energy reward if not provided
+      int? taskEnergyReward = energyReward;
+      if (taskEnergyReward == null) {
+        final task = await TaskService.getTask(taskId);
+        if (task != null) {
+          taskEnergyReward = task.energyReward;
         }
       }
 
-      if (task != null) {
-        await DayService.addEnergyToDay(currentDate, task.energyReward);
-        debugPrint('DayManager: Added ${task.energyReward} energy from task');
+      if (taskEnergyReward != null) {
+        await DayService.addEnergyToDay(currentDate, taskEnergyReward);
+        debugPrint('DayManager: Added $taskEnergyReward energy from task');
       }
 
       await loadCurrentDay();
@@ -181,7 +182,7 @@ class DayManager extends BaseManager {
     }
   }
 
-  Future<void> uncompleteTask(String taskId) async {
+  Future<void> uncompleteTask(String taskId, {int? energyReward}) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to uncomplete task for');
       return;
@@ -195,22 +196,23 @@ class DayManager extends BaseManager {
 
       await DayService.removeCompletedTask(currentDate, taskId);
 
-      Task? task;
-      for (var t in _currentDay!.dailyTasks) {
-        if (t.id == taskId) {
-          task = t;
-          break;
+      // Fetch task to get energy reward if not provided
+      int? taskEnergyReward = energyReward;
+      if (taskEnergyReward == null) {
+        final task = await TaskService.getTask(taskId);
+        if (task != null) {
+          taskEnergyReward = task.energyReward;
         }
       }
 
-      if (task != null) {
-        await DayService.addEnergyToDay(currentDate, -task.energyReward);
-        debugPrint('DayManager: Removed ${task.energyReward} energy from task');
+      if (taskEnergyReward != null) {
+        await DayService.addEnergyToDay(currentDate, -taskEnergyReward);
+        debugPrint('DayManager: Removed $taskEnergyReward energy from task');
       }
 
       await loadCurrentDay();
 
-      debugPrint('DayManager: Task completed successfully');
+      debugPrint('DayManager: Task uncompleted successfully');
       notifyListeners();
     } catch (e) {
       debugPrint('DayManager: Error uncompleting task: $e');

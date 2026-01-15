@@ -8,6 +8,7 @@ import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/core/theme/app_theme.dart';
 import 'package:birdo/hive_registrar.g.dart';
 import 'package:birdo/model/entities/day.dart';
+import 'package:birdo/model/entities/day_adapter_migration.dart';
 import 'package:birdo/model/entities/pet.dart';
 import 'package:birdo/model/entities/rainbow_stones.dart';
 import 'package:birdo/model/entities/task.dart';
@@ -43,6 +44,18 @@ Future<void> main() async {
 
   // Register adapters
   Hive.registerAdapters();
+  
+  // Override DayAdapter with migration adapter for backwards compatibility
+  // This handles migration from List<Task> to List<String> for dailyTaskIds
+  // Note: Registering with the same typeId (6) will replace the generated DayAdapter
+  try {
+    Hive.registerAdapter(DayAdapterMigration());
+    debugPrint('DayAdapterMigration: Successfully registered migration adapter');
+  } catch (e) {
+    debugPrint('DayAdapterMigration: Error registering adapter (may already be registered): $e');
+    // If registration fails, the generated adapter will be used
+    // This is acceptable for new installations but old data may fail to load
+  }
 
   // Open boxes
   try {

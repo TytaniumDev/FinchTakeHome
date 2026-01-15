@@ -86,7 +86,7 @@ void main() {
         checkedIn: false,
         energy: 0,
         completedTaskIds: [],
-        dailyTasks: [],
+        dailyTaskIds: [],
         rainbowStonesEarned: 0,
       );
     });
@@ -97,7 +97,7 @@ void main() {
       expect(testDay.checkedIn, isFalse);
       expect(testDay.energy, equals(0));
       expect(testDay.completedTaskIds, isEmpty);
-      expect(testDay.dailyTasks, isEmpty);
+      expect(testDay.dailyTaskIds, isEmpty);
       expect(testDay.rainbowStonesEarned, equals(0));
     });
 
@@ -110,7 +110,7 @@ void main() {
       expect(day.checkedIn, isFalse);
       expect(day.energy, equals(0));
       expect(day.completedTaskIds, isEmpty);
-      expect(day.dailyTasks, isEmpty);
+      expect(day.dailyTaskIds, isEmpty);
       expect(day.rainbowStonesEarned, equals(0));
     });
 
@@ -264,8 +264,8 @@ void main() {
       expect(day3.getDateString(), equals('2023-05-07'));
     });
 
-    test('dailyTasks can be added and accessed', () {
-      expect(testDay.dailyTasks, isEmpty);
+    test('dailyTaskIds can be added and accessed', () {
+      expect(testDay.dailyTaskIds, isEmpty);
 
       final task1 = Task.create(
         title: 'Task 1',
@@ -279,12 +279,12 @@ void main() {
         category: TaskCategory.selfCare,
       );
 
-      testDay.dailyTasks.add(task1);
-      testDay.dailyTasks.add(task2);
+      testDay.dailyTaskIds.add(task1.id);
+      testDay.dailyTaskIds.add(task2.id);
 
-      expect(testDay.dailyTasks.length, equals(2));
-      expect(testDay.dailyTasks[0].title, equals('Task 1'));
-      expect(testDay.dailyTasks[1].title, equals('Task 2'));
+      expect(testDay.dailyTaskIds.length, equals(2));
+      expect(testDay.dailyTaskIds, contains(task1.id));
+      expect(testDay.dailyTaskIds, contains(task2.id));
     });
   });
 }

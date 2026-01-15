@@ -63,55 +63,79 @@ class TaskService {
     final day = await DayService.getOrCreate(date);
     debugPrint('TaskService: Found day record: ${day.id}');
     debugPrint(
-      'TaskService: Number of non-repeat tasks in day: ${day.dailyTasks.length}',
+      'TaskService: Number of stored task IDs in day: ${day.dailyTaskIds.length}',
     );
 
-    // Grab only tasks that have a repeat day on this day.
+    // Fetch Task objects for stored IDs (non-recurring + previously seen recurring)
+    final storedTasks = <Task>[];
+    final invalidTaskIds = <String>[];
+    
+    for (var taskId in day.dailyTaskIds) {
+      final task = await getTask(taskId);
+      if (task != null) {
+        storedTasks.add(task);
+      } else {
+        debugPrint('TaskService: Task $taskId not found, marking for removal');
+        invalidTaskIds.add(taskId);
+      }
+    }
+
+    // Remove invalid task IDs
+    if (invalidTaskIds.isNotEmpty) {
+      day.dailyTaskIds.removeWhere((id) => invalidTaskIds.contains(id));
+      await DayService.saveDay(day);
+    }
+
+    // Find recurring tasks that should appear on this weekday
     final weekdayInt = day.date.weekday;
     debugPrint(
-      'TaskService: Finding repeating tasks for weekday # $weekdayInt',
+      'TaskService: Finding recurring tasks for weekday # $weekdayInt',
     );
-    final repeatTasksForDay = _getBox().values.where((task) {
-      if (task.repeatDayIndices != null) {
-        final repeatDayIndices = task.repeatDayIndices!;
-        return repeatDayIndices
-            .where((dayIndex) => dayIndex == weekdayInt)
-            .isNotEmpty;
+    final recurringTasksForDay = _getBox().values.where((task) {
+      if (task.repeatDayIndices != null && task.repeatDayIndices!.isNotEmpty) {
+        return task.repeatDayIndices!.contains(weekdayInt);
       }
       return false;
     }).toList();
 
-    // Add repeating tasks if they aren't already in the day's task list.
-    for (var repeatTask in repeatTasksForDay) {
-      final alreadyInDay = day.dailyTasks.any(
-        (task) => task.id == repeatTask.id,
-      );
-      if (!alreadyInDay) {
+    // Track which task IDs we've already included
+    final includedTaskIds = <String>{};
+    final allTasks = <Task>[];
+
+    // Add stored tasks (non-recurring + previously seen recurring)
+    for (var task in storedTasks) {
+      includedTaskIds.add(task.id);
+      allTasks.add(task);
+    }
+
+    // Add new recurring tasks (not already in day.dailyTaskIds)
+    bool dayNeedsUpdate = false;
+    for (var recurringTask in recurringTasksForDay) {
+      if (!includedTaskIds.contains(recurringTask.id)) {
         debugPrint(
-          'TaskService: Adding repeating task to day: ${repeatTask.title} (${repeatTask.id})',
+          'TaskService: Adding recurring task: ${recurringTask.title} (${recurringTask.id})',
         );
-        day.dailyTasks.add(repeatTask);
-      } else {
-        debugPrint(
-          'TaskService: Repeating task already in day: ${repeatTask.title} (${repeatTask.id})',
-        );
+        includedTaskIds.add(recurringTask.id);
+        allTasks.add(recurringTask);
+        
+        // Store recurring task ID in day for historical tracking
+        if (!day.dailyTaskIds.contains(recurringTask.id)) {
+          day.dailyTaskIds.add(recurringTask.id);
+          dayNeedsUpdate = true;
+        }
       }
     }
 
+    // Save day if we added new recurring task IDs
+    if (dayNeedsUpdate) {
+      await DayService.saveDay(day);
+      debugPrint('TaskService: Updated day with new recurring task IDs');
+    }
+
     debugPrint(
-      'TaskService: Number of total tasks in day: ${day.dailyTasks.length}',
+      'TaskService: Returning ${allTasks.length} tasks (${storedTasks.length} stored, ${recurringTasksForDay.length} recurring)',
     );
-
-    if (day.dailyTasks.isEmpty) {
-      debugPrint('TaskService: No tasks found for this day');
-      return [];
-    }
-
-    debugPrint('TaskService: Returning ${day.dailyTasks.length} tasks');
-    for (var task in day.dailyTasks) {
-      debugPrint('TaskService: Task: ${task.title} (${task.id})');
-    }
-    return day.dailyTasks;
+    return allTasks;
   }
 
   static Future<Task> createTask({
@@ -155,9 +179,9 @@ class TaskService {
 
     final day = await DayService.getOrCreate(targetDate);
     debugPrint('TaskService: Found day record: ${day.id}');
-    debugPrint('TaskService: Current tasks in day: ${day.dailyTasks.length}');
+    debugPrint('TaskService: Current task IDs in day: ${day.dailyTaskIds.length}');
 
-    await DayService.addTaskToDay(targetDate, task);
+    await DayService.addTaskToDay(targetDate, task.id);
     debugPrint('TaskService: Added task to day using DayService');
 
     return task;
@@ -193,9 +217,8 @@ class TaskService {
       'TaskService: Updating task: ${task.title} (${task.id}) for date: ${ServiceLocator.dateTimeService.generateDayId(targetDate)}',
     );
 
-    await DayService.updateTaskInDay(targetDate, task);
-
     await saveTask(task);
+    // No need to update Day - task is stored separately
   }
 
   static Future<void> deleteTask(Task task, {DateTime? date}) async {

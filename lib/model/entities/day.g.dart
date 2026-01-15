@@ -22,7 +22,7 @@ class DayAdapter extends TypeAdapter<Day> {
       checkedIn: fields[2] == null ? false : fields[2] as bool,
       energy: fields[3] == null ? 0 : (fields[3] as num).toInt(),
       completedTaskIds: (fields[4] as List?)?.cast<String>(),
-      dailyTasks: (fields[5] as List?)?.cast<Task>(),
+      dailyTaskIds: (fields[5] as List?)?.cast<String>(),
       rainbowStonesEarned: fields[7] == null ? 0 : (fields[7] as num).toInt(),
     );
   }
@@ -42,7 +42,7 @@ class DayAdapter extends TypeAdapter<Day> {
       ..writeByte(4)
       ..write(obj.completedTaskIds)
       ..writeByte(5)
-      ..write(obj.dailyTasks)
+      ..write(obj.dailyTaskIds)
       ..writeByte(7)
       ..write(obj.rainbowStonesEarned);
   }

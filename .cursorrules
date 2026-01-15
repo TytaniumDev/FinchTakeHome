@@ -1,0 +1,309 @@
+# Dart & Flutter Coding Rules for Birdo Tasks
+
+## Architecture Overview
+
+The app follows a **layered architecture** with clear separation:
+
+- **Entities** (`lib/model/entities/`): Data models with entity-specific logic,
+  extend `HiveObject`, use `@HiveType`/`@HiveField`
+- **Services** (`lib/model/services/`): Pure data access, stateless, static
+  methods only, support test mode
+- **Managers** (`lib/model/managers/`): State management + domain logic, extend
+  `BaseManager`, use `ChangeNotifier`
+- **Controllers** (`lib/controllers/`): Cross-domain coordination, extend
+  `BaseController`
+- **View** (`lib/view/`): UI layer using Provider for state management
+
+## Layer Rules
+
+### Entities
+
+- Extend `HiveObject` with `@HiveType` and `@HiveField` annotations
+- Include factory constructors: `factory Entity.create({...})`
+- Place entity-specific validation and simple operations here
+- Use `part 'entity.g.dart';` for generated files
+- DO: Keep logic simple and self-contained
+- DON'T: Access services/managers, include cross-domain logic
+
+### Services
+
+- **ALWAYS use static methods only** - services are stateless utility classes
+- Support test mode: `enableTestMode(Box<T> testBox)` and `disableTestMode()`
+- Use `_getBox()` pattern to abstract Hive box access
+- Include debug logging: `debugPrint('ServiceName: Operation description')`
+- Methods should be async and return Futures
+- Handle errors gracefully: try-catch, log, return null/default
+- DO: Pure CRUD operations, test mode support, error handling
+- DON'T: Create instances, include business logic, access other services
+  directly
+
+### Managers
+
+- Extend `BaseManager` (which extends `ChangeNotifier`)
+- Implement `onInitialize()` for setup
+- Use private fields with public getters: `List<Task> _tasks = [];` →
+  `List<Task> get tasks => _tasks;`
+- **ALWAYS call `notifyListeners()` after state changes**
+- Delegate persistence to Services
+- Use `DateTimeService` from `ServiceLocator` for date operations
+- Use dependency injection:
+  `TaskManager({DateTimeService? dateTimeService}) : _dateTimeService = dateTimeService ?? ServiceLocator.dateTimeService;`
+- DO: Domain-specific business logic, state management, notifyListeners()
+- DON'T: Access other managers directly, include UI logic, skip
+  notifyListeners()
+
+### Controllers
+
+- Extend `BaseController`
+- Take managers as constructor dependencies
+- Implement `onInitialize()` if needed
+- Coordinate operations across multiple managers
+- Use `log()` method for debug logging: `log('Operation description')`
+- DO: Cross-domain coordination, complex workflows, error handling
+- DON'T: Access services directly, include UI logic, depend on widgets
+
+### View Layer
+
+- Use `Consumer<T>` or `Consumer2<T, U>` from Provider for reactive updates
+- Prefer `StatelessWidget` when possible
+- Use `context.read<T>()` for one-time reads (not
+  `Provider.of<T>(context, listen: false)`)
+- Extract reusable widgets to `lib/view/widgets/`
+- **ALWAYS use `AppTheme` constants** for styling (spacing, colors, radius,
+  etc.)
+- Keep widgets focused and small
+- Handle loading and error states
+- DO: Use Consumer, AppTheme, extract widgets, handle states
+- DON'T: Access managers/services directly, include business logic, hardcode
+  values
+
+## Code Patterns
+
+### Naming Conventions
+
+- Classes: PascalCase (`TaskManager`, `PetService`)
+- Files: snake_case matching class name (`task_manager.dart`)
+- Variables/Methods: camelCase (`currentPet`, `loadTasks()`)
+- Private members: Leading underscore (`_tasks`, `_loadData()`)
+
+### Import Organization
+
+1. Dart SDK imports
+2. Flutter imports
+3. Package imports (third-party)
+4. Project imports
+
+```dart
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import 'package:provider/provider.dart';
+import 'package:hive_ce/hive.dart';
+
+import 'package:birdo/model/entities/task.dart';
+```
+
+### Error Handling
+
+- Always use try-catch for async operations
+- Log errors with `debugPrint('ClassName: Error description: $e')`
+- Return null or default values on error (don't throw unless critical)
+
+### Dependency Injection
+
+- Use constructor injection for testability
+- Provide default values using `ServiceLocator`:
+
+```dart
+TaskManager({DateTimeService? dateTimeService})
+  : _dateTimeService = dateTimeService ?? ServiceLocator.dateTimeService;
+```
+
+## Dart Best Practices
+
+### Null Safety
+
+- Use null-safe operators (`?.`, `??`, `!` when safe)
+- Prefer non-nullable types when possible
+- Use `??` for default values
+
+### Async/Await
+
+- **ALWAYS use `async`/`await`** instead of `.then()`
+- Use `Future<void>` for fire-and-forget operations
+- Handle errors with try-catch
+
+### Type Safety
+
+- Use explicit types for public APIs
+- Use `var`/`final` for local variables when type is obvious
+- Avoid `dynamic` unless absolutely necessary
+
+### Constants
+
+- Use `const` constructors when possible
+- Use `final` for instance constants
+- Extract magic numbers/strings to named constants
+
+## Flutter Best Practices
+
+### Widget Composition
+
+- Prefer composition over inheritance
+- Extract reusable widgets
+- Keep widgets small and focused
+- **Use `const` constructors when possible**
+
+### State Management
+
+- Use `Consumer<T>` for reactive updates
+- Use `context.read<T>()` for one-time reads
+- Use `Consumer2`, `Consumer3` for multiple providers
+
+### Theming
+
+- **ALWAYS use `AppTheme` constants**: `AppTheme.spacing.medium`,
+  `AppTheme.radius.medium`, `AppTheme.colors.primary`
+- Use `Theme.of(context)` for theme-aware styling
+- Support both light and dark themes
+- **NEVER hardcode values**: Use `AppTheme.spacing.medium` not `16`, use
+  `Theme.of(context).colorScheme.surface` not `Colors.white`
+
+### Performance
+
+- Use `const` constructors when possible
+- Avoid rebuilding entire trees (use `Consumer` selectively)
+- Dispose controllers/resources properly
+- Use `ListView.builder` for long lists
+
+## Common Pitfalls to AVOID
+
+### ❌ Accessing Services from Managers
+
+```dart
+// BAD
+class TaskManager extends BaseManager {
+  Future<void> loadTasks() async {
+    final day = await DayService.getOrCreate(...); // ❌
+  }
+}
+// GOOD - manager delegates to its service
+class TaskManager extends BaseManager {
+  Future<void> loadTasks() async {
+    _tasks = await TaskService.getCurrentDayTasks(); // ✅
+  }
+}
+```
+
+### ❌ Business Logic in Services
+
+```dart
+// BAD
+class TaskService {
+  static Future<void> completeTask(Task task) async {
+    task.complete(); // ❌ business logic
+    await DayService.recordCompletion(...); // ❌ coordination
+  }
+}
+// GOOD - service only handles persistence
+class TaskService {
+  static Future<void> saveTask(Task task) async {
+    await box.put(task.id, task); // ✅ only persistence
+  }
+}
+```
+
+### ❌ Managers Accessing Other Managers
+
+```dart
+// BAD
+class TaskManager extends BaseManager {
+  Future<void> completeTask(String taskId) async {
+    await _petManager.addEnergy(...); // ❌
+  }
+}
+// GOOD - controller coordinates
+class TaskController extends BaseController {
+  Future<void> completeTask(String taskId) async {
+    await _taskManager.markComplete(taskId); // ✅
+    await _petManager.addEnergy(...); // ✅
+  }
+}
+```
+
+### ❌ Missing notifyListeners()
+
+```dart
+// BAD
+Future<void> loadTasks() async {
+  _tasks = await TaskService.getCurrentDayTasks(); // ❌ missing notifyListeners()
+}
+// GOOD
+Future<void> loadTasks() async {
+  _tasks = await TaskService.getCurrentDayTasks();
+  notifyListeners(); // ✅
+}
+```
+
+### ❌ Hardcoded Values
+
+```dart
+// BAD
+Container(
+  padding: EdgeInsets.all(16), // ❌
+  margin: EdgeInsets.symmetric(horizontal: 24), // ❌
+)
+// GOOD
+Container(
+  padding: EdgeInsets.all(AppTheme.spacing.medium), // ✅
+  margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing.large), // ✅
+)
+```
+
+### ❌ Not Using const
+
+```dart
+// BAD
+Widget build(BuildContext context) {
+  return Column(
+    children: [
+      Text('Hello'), // ❌ not const
+      SizedBox(height: 16), // ❌ not const
+    ],
+  );
+}
+// GOOD
+Widget build(BuildContext context) {
+  return Column(
+    children: [
+      const Text('Hello'), // ✅
+      const SizedBox(height: 16), // ✅
+    ],
+  );
+}
+```
+
+## Testing Patterns
+
+- Use `test/` directory mirroring `lib/` structure
+- Use `TestFactory` for creating test entities
+- Use `ServiceLocatorTestHelper` for test setup
+- Enable test mode on services: `ServiceName.enableTestMode(testBox)`
+- Always disable test mode in `tearDown()`: `ServiceName.disableTestMode()`
+
+## Quick Checklist
+
+When writing code, ensure:
+
+- [ ] Entity: Extends `HiveObject`, uses `@HiveType`/`@HiveField`, includes
+      factory constructor
+- [ ] Service: Static methods only, supports test mode, includes error handling
+- [ ] Manager: Extends `BaseManager`, uses private fields with getters, calls
+      `notifyListeners()`
+- [ ] Controller: Extends `BaseController`, takes managers as dependencies
+- [ ] Widget: Uses `Consumer` for reactive updates, uses `AppTheme` for styling
+- [ ] Imports: Organized (dart → flutter → packages → project)
+- [ ] Error Handling: Try-catch for async, debug logging
+- [ ] Theming: Uses `AppTheme` constants, never hardcodes values
+- [ ] Performance: Uses `const` constructors, `ListView.builder` for lists

@@ -32,7 +32,7 @@ void main() {
       TaskService.enableTestMode(taskBox);
     });
 
-    setUp(() {
+    setUp(() async {
       dateTimeService = ServiceLocatorTestHelper.mockDateTimeService;
 
       testTask = TestFactory.createTestTask(
@@ -43,8 +43,10 @@ void main() {
       testDay = TestFactory.createTestDay(
         id: '2023-01-01',
         date: DateTime(2023, 1, 1),
-        dailyTasks: [testTask],
+        dailyTaskIds: [testTask.id],
       );
+      // Also save the task to the task box so getTasksForDay can find it
+      await taskBox.put(testTask.id, testTask);
     });
 
     tearDown(() async {
@@ -96,7 +98,7 @@ void main() {
       expect(createdDay, isNotNull);
       expect(createdDay?.id, equals(dayId));
       expect(createdDay?.date, equals(newDate));
-      expect(createdDay?.dailyTasks, isEmpty);
+      expect(createdDay?.dailyTaskIds, isEmpty);
     });
 
     test('getCurrentDayTasks returns tasks for current day', () async {
@@ -136,7 +138,7 @@ void main() {
       final dayWithCompletedTask = TestFactory.createTestDay(
         id: '2023-01-01',
         date: DateTime(2023, 1, 1),
-        dailyTasks: [completedTask],
+        dailyTaskIds: [completedTask.id],
         completedTaskIds: [completedTask.id],
       );
       await dayBox.put(dayWithCompletedTask.id, dayWithCompletedTask);
@@ -168,8 +170,8 @@ void main() {
       expect(savedTask?.title, equals('New Task'));
 
       final updatedDay = dayBox.get(testDay.id);
-      expect(updatedDay?.dailyTasks.length, equals(1));
-      expect(updatedDay?.dailyTasks[0].id, equals(newTask.id));
+      expect(updatedDay?.dailyTaskIds.length, equals(1));
+      expect(updatedDay?.dailyTaskIds, contains(newTask.id));
     });
 
     test('updateTask updates task in both boxes', () async {
@@ -187,8 +189,10 @@ void main() {
       expect(savedTask?.title, equals('Updated Task'));
       expect(savedTask?.energyReward, equals(10));
 
+      // Task updates don't affect Day - task is stored separately
+      // Just verify the task was updated in the task box
       final updatedDay = dayBox.get(testDay.id);
-      expect(updatedDay?.dailyTasks[0].title, equals('Updated Task'));
+      expect(updatedDay?.dailyTaskIds, contains(testTask.id));
     });
 
     test('deleteTask removes task from both boxes', () async {
@@ -202,7 +206,7 @@ void main() {
       expect(deletedTask, isNull);
 
       final updatedDay = dayBox.get(testDay.id);
-      expect(updatedDay?.dailyTasks, isEmpty);
+      expect(updatedDay?.dailyTaskIds, isEmpty);
     });
 
     test('getTask returns task when it exists', () async {
@@ -241,9 +245,13 @@ void main() {
 
       final result = await TaskService.getTasksForDay(testDay.date);
 
-      // Test day has a built in task
+      // Test day has a built in task + recurring task
       expect(result.length, equals(2));
       expect(result.any((task) => task.id == testDailyRepeatTask.id), isTrue);
+      
+      // Verify recurring task ID was added to day
+      final updatedDay = dayBox.get(testDay.id);
+      expect(updatedDay?.dailyTaskIds, contains(testDailyRepeatTask.id));
     });
 
     test(
@@ -261,12 +269,16 @@ void main() {
 
         final result = await TaskService.getTasksForDay(testDay.date);
 
-        // Test day has a built in task
+        // Test day has a built in task + recurring task
         expect(result.length, equals(2));
         expect(
           result.any((task) => task.id == testWeeklyRepeatTask.id),
           isTrue,
         );
+        
+        // Verify recurring task ID was added to day
+        final updatedDay = dayBox.get(testDay.id);
+        expect(updatedDay?.dailyTaskIds, contains(testWeeklyRepeatTask.id));
       },
     );
 
@@ -285,12 +297,16 @@ void main() {
 
         final result = await TaskService.getTasksForDay(testDay.date);
 
-        // Test day has a built in task
+        // Test day has a built in task, but recurring task doesn't repeat on this day
         expect(result.length, equals(1));
         expect(
           result.any((task) => task.id == testWeeklyRepeatTask.id),
           isFalse,
         );
+        
+        // Verify recurring task ID was NOT added to day
+        final updatedDay = dayBox.get(testDay.id);
+        expect(updatedDay?.dailyTaskIds, isNot(contains(testWeeklyRepeatTask.id)));
       },
     );
   });

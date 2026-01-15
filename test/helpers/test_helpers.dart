@@ -115,7 +115,7 @@ class TestFactory {
     bool checkedIn = false,
     int energy = 0,
     List<String>? completedTaskIds,
-    List<Task>? dailyTasks,
+    List<String>? dailyTaskIds,
     int rainbowStonesEarned = 0,
   }) {
     return Day(
@@ -124,7 +124,7 @@ class TestFactory {
       checkedIn: checkedIn,
       energy: energy,
       completedTaskIds: completedTaskIds,
-      dailyTasks: dailyTasks,
+      dailyTaskIds: dailyTaskIds,
       rainbowStonesEarned: rainbowStonesEarned,
     );
   }
