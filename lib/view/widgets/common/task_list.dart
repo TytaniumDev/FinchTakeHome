@@ -2,6 +2,7 @@ import 'package:birdo/controllers/task_controller.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:birdo/view/widgets/task_card.dart';
+import 'package:birdo/view/widgets/task_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -52,6 +53,9 @@ class TaskList extends StatelessWidget {
               AnimatedTaskCard(
                 task: task,
                 onTap: onTaskTap,
+                onLongPress: () {
+                  showTaskOptionsDialog(context, task);
+                },
                 onCheckboxChanged: (isCompleted) {
                   if (isCompleted == true) {
                     taskController.completeTask(task.id);

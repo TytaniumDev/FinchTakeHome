@@ -195,6 +195,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           type: ButtonType.primary,
                           onPressed: () => _showChangeNameDialog(context),
                         ),
+                        const SizedBox(height: 8),
+                        ChunkyButton(
+                          text: 'Manage Recurring Tasks',
+                          icon: Icons.repeat,
+                          type: ButtonType.secondary,
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/recurring_tasks');
+                          },
+                        ),
                       ],
                     ),
                   ],
