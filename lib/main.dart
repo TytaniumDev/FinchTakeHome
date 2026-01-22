@@ -11,17 +11,21 @@ import 'package:birdo/model/entities/day.dart';
 import 'package:birdo/model/entities/day_adapter_migration.dart';
 import 'package:birdo/model/entities/pet.dart';
 import 'package:birdo/model/entities/rainbow_stones.dart';
+import 'package:birdo/model/entities/repeating_task.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/entities/user.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/energy_manager.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
 import 'package:birdo/model/managers/rainbow_stones_manager.dart';
+import 'package:birdo/model/managers/repeating_task_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
+import 'package:birdo/model/services/task_migration_service.dart';
 import 'package:birdo/model/services/user_service.dart';
 import 'package:birdo/view/screens/home_screen.dart';
 import 'package:birdo/view/screens/nux/nux_flow.dart';
 import 'package:birdo/view/screens/pet_profile_screen.dart';
+import 'package:birdo/view/screens/recurring_tasks_screen.dart';
 import 'package:birdo/view/screens/settings_screen.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
@@ -81,6 +85,7 @@ Future<void> main() async {
 
     // Open all boxes
     await Hive.openBox<Task>(taskBox);
+    await Hive.openBox<RepeatingTask>(repeatingTaskBox);
     await Hive.openBox<Pet>(petBox);
     await Hive.openBox<Day>(dayBox);
     await Hive.openBox<RainbowStones>(rainbowStonesBox);
@@ -100,6 +105,9 @@ Future<void> main() async {
 Future<void> secondaryInitializationSteps() async {
   await UserService.maybeCreateDebugUser();
   await UserService.syncUserToServer();
+
+  // Migrate existing recurring tasks to new RepeatingTask system
+  await TaskMigrationService.migrateRecurringTasks();
 }
 
 class BirdoTasks extends StatefulWidget {
@@ -130,19 +138,28 @@ class _BirdoTasksState extends State<BirdoTasks> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskManager()),
+        ChangeNotifierProvider(create: (_) => RepeatingTaskManager()),
         ChangeNotifierProvider(create: (_) => PetManager()),
         ChangeNotifierProvider(create: (_) => DayManager()),
         ChangeNotifierProvider(create: (_) => EnergyManager()),
         ChangeNotifierProvider(create: (_) => RainbowStonesManager()),
 
-        Provider(
-          create:
-              (context) => TaskController(
-                taskManager: context.read<TaskManager>(),
-                petManager: context.read<PetManager>(),
-                dayManager: context.read<DayManager>(),
+        ProxyProvider6<TaskManager, RepeatingTaskManager, PetManager, DayManager, EnergyManager, RainbowStonesManager, TaskController>(
+          create: (context) => TaskController(
+            taskManager: context.read<TaskManager>(),
+            repeatingTaskManager: context.read<RepeatingTaskManager>(),
+            petManager: context.read<PetManager>(),
+            dayManager: context.read<DayManager>(),
             rainbowStonesManager: context.read<RainbowStonesManager>(),
-              ),
+          ),
+          update: (context, taskManager, repeatingTaskManager, petManager, dayManager, energyManager, rainbowStonesManager, previous) =>
+            TaskController(
+              taskManager: taskManager,
+              repeatingTaskManager: repeatingTaskManager,
+              petManager: petManager,
+              dayManager: dayManager,
+              rainbowStonesManager: rainbowStonesManager,
+            ),
         ),
         Provider(
           create:
@@ -169,6 +186,7 @@ class _BirdoTasksState extends State<BirdoTasks> {
       child: Builder(
         builder: (context) {
           final taskManager = context.read<TaskManager>();
+          final repeatingTaskManager = context.read<RepeatingTaskManager>();
           final petManager = context.read<PetManager>();
           final dayManager = context.read<DayManager>();
           final energyManager = context.read<EnergyManager>();
@@ -181,6 +199,7 @@ class _BirdoTasksState extends State<BirdoTasks> {
 
           Future.microtask(() async {
             await taskManager.initialize();
+            await repeatingTaskManager.initialize();
             await petManager.initialize();
             await dayManager.initialize();
             await energyManager.initialize();
@@ -214,6 +233,7 @@ class _BirdoTasksState extends State<BirdoTasks> {
               '/home': (context) => const HomeScreen(),
               '/settings': (context) => const SettingsScreen(),
               '/pet_profile': (context) => const PetProfileScreen(),
+              '/recurring_tasks': (context) => const RecurringTasksScreen(),
               '/nux':
                   (context) =>
                       NuxFlow(controller: ServiceLocator.nuxController),
