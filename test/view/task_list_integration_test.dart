@@ -1,5 +1,4 @@
-// This entire test file is skipped due to Windows file lock issues with Hive.
-// See the @Skip annotation on main() below.
+// Integration tests for the TaskList widget using real managers and services.
 
 import 'package:birdo/controllers/task_controller.dart';
 import 'package:birdo/core/theme/app_theme.dart';
@@ -32,11 +31,6 @@ import '../helpers/service_locator_test_helper.dart';
 /// These tests verify the full flow of task completion/uncompletion including
 /// UI state updates, which helps catch bugs that only appear when using
 /// real implementations.
-///
-/// NOTE: These tests are currently skipped due to Windows file lock issues
-/// with Hive. The tests attempt to use real Hive boxes with specific names
-/// that services look for, which causes lock contention between test runs.
-// TODO: Refactor to use unique box names or in-memory storage.
 void main() {
   late Box<Task> taskBox;
   late Box<Day> dayBox;
@@ -306,7 +300,7 @@ void main() {
     );
   }
 
-  group('TaskList Integration Tests - Task Completion/Uncompletion', skip: 'Windows file lock issues with Hive', () {
+  group('TaskList Integration Tests - Task Completion/Uncompletion', () {
     testWidgets(
         'completing and uncompleting a task updates UI state correctly',
         (tester) async {
@@ -575,7 +569,7 @@ void main() {
     });
   });
 
-  group('TaskList Integration Tests - Select Rebuild Fix', skip: 'Windows file lock issues with Hive', () {
+  group('TaskList Integration Tests - Select Rebuild Fix', () {
     testWidgets(
         'context.select triggers rebuild when completedTaskIds changes',
         (tester) async {
@@ -725,7 +719,7 @@ void main() {
     });
   });
 
-  group('TaskList Integration Tests - AnimatedTaskCard State Bug', skip: 'Windows file lock issues with Hive', () {
+  group('TaskList Integration Tests - AnimatedTaskCard State Bug', () {
     testWidgets(
         'AnimatedTaskCard animation controller reverses when uncompleting',
         (tester) async {
@@ -937,7 +931,7 @@ void main() {
     });
   });
 
-  group('TaskList Integration Tests - Root Cause Analysis', skip: 'Windows file lock issues with Hive', () {
+  group('TaskList Integration Tests - Root Cause Analysis', () {
     testWidgets(
         'DayManager.completedTaskIds returns new list on each call (fix verification)',
         (tester) async {
@@ -1017,7 +1011,7 @@ void main() {
     });
   });
 
-  group('TaskList Integration Tests - Energy and Rainbow Stones', skip: 'Windows file lock issues with Hive', () {
+  group('TaskList Integration Tests - Energy and Rainbow Stones', () {
     testWidgets('uncompleting task removes energy from pet', (tester) async {
       await taskController.createTask(
         'Energy Test Task',
