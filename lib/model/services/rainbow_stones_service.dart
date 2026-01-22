@@ -6,9 +6,29 @@ import 'package:hive_ce/hive.dart';
 class RainbowStonesService {
   static const String _currentBalanceKey = 'current_balance';
 
+  static bool _testMode = false;
+  static Box<RainbowStones>? _testBox;
+
+  static void enableTestMode(Box<RainbowStones> testBox) {
+    _testMode = true;
+    _testBox = testBox;
+  }
+
+  static void disableTestMode() {
+    _testMode = false;
+    _testBox = null;
+  }
+
+  static Box<RainbowStones> _getBox() {
+    if (_testMode && _testBox != null) {
+      return _testBox!;
+    }
+    return Hive.box<RainbowStones>(rainbowStonesBox);
+  }
+
   static Future<RainbowStones> getCurrentBalance() async {
     debugPrint('RainbowStonesService: Getting current balance');
-    final box = Hive.box<RainbowStones>(rainbowStonesBox);
+    final box = _getBox();
     var stones = box.get(_currentBalanceKey);
     if (stones == null) {
       debugPrint('RainbowStonesService: No balance found, creating new');
@@ -23,7 +43,7 @@ class RainbowStonesService {
 
   static Future<void> saveRainbowStones(RainbowStones stones) async {
     debugPrint('RainbowStonesService: Saving rainbow stones');
-    final box = Hive.box<RainbowStones>(rainbowStonesBox);
+    final box = _getBox();
     await box.put(_currentBalanceKey, stones);
   }
 
