@@ -1,7 +1,9 @@
 import 'package:birdo/core/constants/hive_boxes.dart';
 import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/model/entities/task.dart';
+import 'package:birdo/model/entities/repeating_task.dart';
 import 'package:birdo/model/services/day_service.dart';
+import 'package:birdo/model/services/repeating_task_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive.dart';
 
@@ -86,43 +88,56 @@ class TaskService {
       await DayService.saveDay(day);
     }
 
-    // Find recurring tasks that should appear on this weekday
+    // Find recurring task templates that should appear on this weekday
     final weekdayInt = day.date.weekday;
     debugPrint(
-      'TaskService: Finding recurring tasks for weekday # $weekdayInt',
+      'TaskService: Finding recurring task templates for weekday # $weekdayInt',
     );
-    final recurringTasksForDay = _getBox().values.where((task) {
-      if (task.repeatDayIndices != null && task.repeatDayIndices!.isNotEmpty) {
-        return task.repeatDayIndices!.contains(weekdayInt);
-      }
-      return false;
-    }).toList();
+
+    // Get active repeating task templates
+    final repeatingTasks = await RepeatingTaskService.getAllActiveRepeatingTasks();
+
+    // Find templates that should appear today
+    final templatesForToday = repeatingTasks.where(
+      (rt) => rt.repeatDayIndices.contains(weekdayInt)
+    ).toList();
+
+    // Check if we already have instances for these templates
+    final existingRepeatingTaskIds = storedTasks
+      .where((t) => t.repeatingTaskId != null)
+      .map((t) => t.repeatingTaskId!)
+      .toSet();
 
     // Track which task IDs we've already included
     final includedTaskIds = <String>{};
     final allTasks = <Task>[];
 
-    // Add stored tasks (non-recurring + previously seen recurring)
+    // Add stored tasks (non-recurring + previously created recurring instances)
     for (var task in storedTasks) {
       includedTaskIds.add(task.id);
       allTasks.add(task);
     }
 
-    // Add new recurring tasks (not already in day.dailyTaskIds)
+    // Create missing task instances from templates
     bool dayNeedsUpdate = false;
-    for (var recurringTask in recurringTasksForDay) {
-      if (!includedTaskIds.contains(recurringTask.id)) {
+    for (var template in templatesForToday) {
+      if (!existingRepeatingTaskIds.contains(template.id)) {
         debugPrint(
-          'TaskService: Adding recurring task: ${recurringTask.title} (${recurringTask.id})',
+          'TaskService: Creating task instance from template: ${template.title} (${template.id})',
         );
-        includedTaskIds.add(recurringTask.id);
-        allTasks.add(recurringTask);
-        
-        // Store recurring task ID in day for historical tracking
-        if (!day.dailyTaskIds.contains(recurringTask.id)) {
-          day.dailyTaskIds.add(recurringTask.id);
-          dayNeedsUpdate = true;
-        }
+
+        // Create new task instance from template
+        final newTask = await createTaskFromTemplate(
+          template: template,
+          date: date,
+        );
+
+        includedTaskIds.add(newTask.id);
+        allTasks.add(newTask);
+
+        // Store task ID in day for historical tracking
+        day.dailyTaskIds.add(newTask.id);
+        dayNeedsUpdate = true;
       }
     }
 
@@ -133,9 +148,32 @@ class TaskService {
     }
 
     debugPrint(
-      'TaskService: Returning ${allTasks.length} tasks (${storedTasks.length} stored, ${recurringTasksForDay.length} recurring)',
+      'TaskService: Returning ${allTasks.length} tasks (${storedTasks.length} stored, ${templatesForToday.length} from templates)',
     );
     return allTasks;
+  }
+
+  /// Creates a Task instance from a RepeatingTask template.
+  ///
+  /// This creates a snapshot of the template at the time of creation.
+  /// The Task instance is independent and won't auto-sync with template updates.
+  static Future<Task> createTaskFromTemplate({
+    required RepeatingTask template,
+    required DateTime date,
+  }) async {
+    // Create snapshot of template
+    final task = Task.create(
+      title: template.title,
+      energyReward: template.energyReward,
+      category: template.category,
+      repeatingTaskId: template.id,
+    );
+
+    await saveTask(task);
+    debugPrint(
+      'TaskService: Created task instance from template ${template.id}: ${task.id}',
+    );
+    return task;
   }
 
   static Future<Task> createTask({
@@ -143,34 +181,16 @@ class TaskService {
     required int energyReward,
     required TaskCategory category,
     DateTime? date,
-    List<int>? repeatDayIndices,
   }) async {
+    // No more repeatDayIndices parameter - use RepeatingTask for recurring tasks
     final task = Task.create(
       title: title,
       energyReward: energyReward,
       category: category,
-      repeatDayIndices: repeatDayIndices,
     );
 
     await saveTask(task);
     debugPrint('TaskService: Saved task to taskBox');
-
-    // With repeated tasks, the first task day may not be today.
-    // Only add to the day if the task is meant to appear today.
-    if (repeatDayIndices != null && repeatDayIndices.isNotEmpty) {
-      final todayWeekday = ServiceLocator.dateTimeService
-          .getCurrentDate()
-          .weekday;
-      final appearsToday = repeatDayIndices.any(
-        (dayIndex) => dayIndex == todayWeekday,
-      );
-      if (!appearsToday) {
-        debugPrint(
-          'TaskService: Task does not repeat today, skipping adding to day record',
-        );
-        return task;
-      }
-    }
 
     final targetDate = date ?? ServiceLocator.dateTimeService.getCurrentDate();
     debugPrint(
