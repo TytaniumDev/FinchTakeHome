@@ -48,8 +48,8 @@ class DayAdapterMigration extends TypeAdapter<Day> {
             'DayAdapterMigration: Error casting field 5, attempting migration: $e',
           );
           dailyTaskIds = field5
-              .where((item) => item is Task)
-              .map((item) => (item as Task).id)
+              .whereType<Task>()
+              .map((item) => (item).id)
               .toList();
           if (dailyTaskIds.isEmpty && field5.every((item) => item is String)) {
             // Last resort: try direct cast again

@@ -3,6 +3,7 @@ import 'package:birdo/core/theme/app_theme.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
 import 'package:birdo/model/managers/rainbow_stones_manager.dart';
+import 'package:birdo/model/managers/repeating_task_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:birdo/view/widgets/task_form.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,7 @@ void main() {
       dateTimeService: ServiceLocatorTestHelper.mockDateTimeService,
     );
     final mockRainbowStonesManager = RainbowStonesManager();
+    final mockRepeatingTaskManager = RepeatingTaskManager();
     final mockTaskController =
         taskController ??
         TaskController(
@@ -40,6 +42,7 @@ void main() {
           dayManager: mockDayManager,
           petManager: mockPetManager,
           rainbowStonesManager: mockRainbowStonesManager,
+          repeatingTaskManager: mockRepeatingTaskManager,
         );
 
     return MaterialApp(

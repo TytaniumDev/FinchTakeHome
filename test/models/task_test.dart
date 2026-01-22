@@ -45,9 +45,13 @@ void main() {
       expect(task.completedAt, isNull);
       expect(task.category, equals(TaskCategory.selfCare));
       
-      // ID should be based on timestamp
+      // ID should be based on timestamp with counter suffix (e.g., "1234567890_0")
       expect(task.id, isNotEmpty);
-      expect(int.tryParse(task.id), isNotNull);
+      expect(task.id.contains('_'), isTrue);
+      final parts = task.id.split('_');
+      expect(parts.length, equals(2));
+      expect(int.tryParse(parts[0]), isNotNull); // timestamp part
+      expect(int.tryParse(parts[1]), isNotNull); // counter part
       
       // Created date should be close to now
       final difference = now.difference(task.createdDate).inSeconds.abs();
@@ -55,15 +59,15 @@ void main() {
     });
     
     test('complete method correctly marks task as completed', () {
-      final before = DateTime.now().subtract(const Duration(seconds: 1));
-      
+      final before = DateTime.now();
+
       task.complete();
-      
+
       expect(task.isCompleted, isTrue);
       expect(task.completedAt, isNotNull);
-      
+
       if (task.completedAt != null) {
-        expect(task.completedAt!.isAfter(before), isTrue);
+        expect(task.completedAt!.compareTo(before), isNonNegative);
         
         // Completed time should be close to now
         final now = DateTime.now();

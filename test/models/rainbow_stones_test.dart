@@ -28,12 +28,12 @@ void main() {
     test(
       'RainbowStones.create factory creates stones with correct initial values',
       () {
-        final before = DateTime.now().subtract(const Duration(seconds: 1));
+        final before = DateTime.now();
         final stones = RainbowStones.create();
 
         expect(stones.currentAmount, equals(0));
         expect(stones.totalEarned, equals(0));
-        expect(stones.lastUpdated.isAfter(before), isTrue);
+        expect(stones.lastUpdated.compareTo(before), isNonNegative);
 
         // Last updated time should be close to now
         final now = DateTime.now();

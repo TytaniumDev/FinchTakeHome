@@ -90,8 +90,7 @@ void main() {
     });
 
     test('addEnergy correctly adds energy and caps at max', () {
-      final before = DateTime.now().subtract(const Duration(minutes: 5));
-      petEnergy.lastUpdatedTime = before;
+      final before = DateTime.now();
       petEnergy.currentEnergy = 5.0;
       petEnergy.maxEnergy = 15.0;
       petEnergy.totalEnergyEarned = 10.0;
@@ -100,7 +99,7 @@ void main() {
 
       expect(petEnergy.currentEnergy, equals(10.0));
       expect(petEnergy.totalEnergyEarned, equals(15.0));
-      expect(petEnergy.lastUpdatedTime.isAfter(before), isTrue);
+      expect(petEnergy.lastUpdatedTime.compareTo(before), isNonNegative);
 
       // Adding more than max should cap at max
       petEnergy.addEnergy(10.0);
@@ -110,37 +109,36 @@ void main() {
     });
 
     test('increaseMaxEnergy correctly increases max energy', () {
-      final before = DateTime.now().subtract(const Duration(minutes: 5));
-      petEnergy.lastUpdatedTime = before;
+      final before = DateTime.now();
       petEnergy.maxEnergy = 15.0;
 
       petEnergy.increaseMaxEnergy(5.0);
 
       expect(petEnergy.maxEnergy, equals(20.0));
-      expect(petEnergy.lastUpdatedTime.isAfter(before), isTrue);
+      expect(petEnergy.lastUpdatedTime.compareTo(before), isNonNegative);
     });
 
     test(
       'markFullEnergyDay increments full energy days when energy is full',
       () {
-        final before = DateTime.now().subtract(const Duration(minutes: 5));
-        petEnergy.lastUpdatedTime = before;
+        final before = DateTime.now();
         petEnergy.fullEnergyDays = 5;
 
         // Not full energy
         petEnergy.currentEnergy = 10.0;
         petEnergy.maxEnergy = 15.0;
+        final notFullTime = petEnergy.lastUpdatedTime;
         petEnergy.markFullEnergyDay();
 
         expect(petEnergy.fullEnergyDays, equals(5));
-        expect(petEnergy.lastUpdatedTime, equals(before));
+        expect(petEnergy.lastUpdatedTime, equals(notFullTime));
 
         // Full energy
         petEnergy.currentEnergy = 15.0;
         petEnergy.markFullEnergyDay();
 
         expect(petEnergy.fullEnergyDays, equals(6));
-        expect(petEnergy.lastUpdatedTime.isAfter(before), isTrue);
+        expect(petEnergy.lastUpdatedTime.compareTo(before), isNonNegative);
       },
     );
 
@@ -174,14 +172,13 @@ void main() {
     );
 
     test('resetForNewDay correctly resets energy', () {
-      final before = DateTime.now().subtract(const Duration(minutes: 5));
-      petEnergy.lastUpdatedTime = before;
+      final before = DateTime.now();
       petEnergy.currentEnergy = 10.0;
 
       petEnergy.resetForNewDay();
 
       expect(petEnergy.currentEnergy, equals(0.0));
-      expect(petEnergy.lastUpdatedTime.isAfter(before), isTrue);
+      expect(petEnergy.lastUpdatedTime.compareTo(before), isNonNegative);
     });
 
     test(

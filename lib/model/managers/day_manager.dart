@@ -22,7 +22,7 @@ class DayManager extends BaseManager {
 
   bool get hasCheckedInToday => _currentDay?.hasCheckedIn() ?? false;
 
-  List<String> get completedTaskIds => _currentDay?.getCompletedTaskIds() ?? [];
+  List<String> get completedTaskIds => List<String>.from(_currentDay?.getCompletedTaskIds() ?? []);
 
   @override
   Future<void> onInitialize() async {

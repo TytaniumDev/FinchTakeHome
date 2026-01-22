@@ -1,7 +1,9 @@
 import 'package:birdo/core/services/date_time_service.dart';
 import 'package:birdo/model/entities/day.dart';
+import 'package:birdo/model/entities/repeating_task.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/services/day_service.dart';
+import 'package:birdo/model/services/repeating_task_service.dart';
 import 'package:birdo/model/services/task_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
@@ -13,6 +15,7 @@ void main() {
   group('Task Model Persistence Tests', () {
     late Box<Task> taskBox;
     late Box<Day> dayBox;
+    late Box<RepeatingTask> repeatingTaskBox;
     late DateTimeService dateTimeService;
     late Task testTask;
     late Day testDay;
@@ -24,12 +27,15 @@ void main() {
       Hive.registerAdapter(TaskAdapter());
       Hive.registerAdapter(DayAdapter());
       Hive.registerAdapter(TaskCategoryAdapter());
+      Hive.registerAdapter(RepeatingTaskAdapter());
 
       taskBox = await Hive.openBox<Task>('tasks_test');
       dayBox = await Hive.openBox<Day>('days_test');
+      repeatingTaskBox = await Hive.openBox<RepeatingTask>('repeatingTasks_test');
 
       DayService.enableTestMode(dayBox);
       TaskService.enableTestMode(taskBox);
+      RepeatingTaskService.enableTestMode(repeatingTaskBox);
     });
 
     setUp(() async {
@@ -52,16 +58,19 @@ void main() {
     tearDown(() async {
       await taskBox.clear();
       await dayBox.clear();
+      await repeatingTaskBox.clear();
     });
 
     tearDownAll(() async {
       // Disable test mode
       DayService.disableTestMode();
       TaskService.disableTestMode();
+      RepeatingTaskService.disableTestMode();
 
       await Hive.close();
       await Hive.deleteBoxFromDisk('tasks_test');
       await Hive.deleteBoxFromDisk('days_test');
+      await Hive.deleteBoxFromDisk('repeatingTasks_test');
     });
 
     test('getTasksForDay returns tasks for existing day', () async {
@@ -225,10 +234,11 @@ void main() {
     });
 
     test('getTasksForDay includes daily repeating tasks', () async {
-      final testDailyRepeatTask = TestFactory.createTestTask(
-        id: 'test-repeat-task-id',
+      // Create a RepeatingTask template that repeats every day
+      final repeatingTaskTemplate = await RepeatingTaskService.createRepeatingTask(
         title: 'Test Repeat Task',
         energyReward: 5,
+        category: TaskCategory.productivity,
         repeatDayIndices: [
           DateTime.monday,
           DateTime.tuesday,
@@ -240,59 +250,65 @@ void main() {
         ],
       );
 
-      await taskBox.put(testDailyRepeatTask.id, testDailyRepeatTask);
       await dayBox.put(testDay.id, testDay);
 
       final result = await TaskService.getTasksForDay(testDay.date);
 
-      // Test day has a built in task + recurring task
+      // Test day has a built in task + recurring task instance created from template
       expect(result.length, equals(2));
-      expect(result.any((task) => task.id == testDailyRepeatTask.id), isTrue);
+      // The task instance will have a different ID than the template, but should have repeatingTaskId set
+      expect(
+        result.any((task) => task.repeatingTaskId == repeatingTaskTemplate.id),
+        isTrue,
+      );
       
-      // Verify recurring task ID was added to day
+      // Verify a task instance was created and added to day
       final updatedDay = dayBox.get(testDay.id);
-      expect(updatedDay?.dailyTaskIds, contains(testDailyRepeatTask.id));
+      expect(updatedDay?.dailyTaskIds.length, equals(2)); // testTask + new recurring task instance
     });
 
     test(
       'getTasksForDay includes weekly repeating task on the day it repeats',
       () async {
-        final testWeeklyRepeatTask = TestFactory.createTestTask(
-          id: 'test-repeat-task-id',
+        // Create a RepeatingTask template that repeats on the test day's weekday
+        final repeatingTaskTemplate = await RepeatingTaskService.createRepeatingTask(
           title: 'Test Repeat Task',
           energyReward: 5,
+          category: TaskCategory.productivity,
           repeatDayIndices: [testDay.date.weekday],
         );
 
-        await taskBox.put(testWeeklyRepeatTask.id, testWeeklyRepeatTask);
         await dayBox.put(testDay.id, testDay);
 
         final result = await TaskService.getTasksForDay(testDay.date);
 
-        // Test day has a built in task + recurring task
+        // Test day has a built in task + recurring task instance created from template
         expect(result.length, equals(2));
+        // The task instance will have a different ID than the template, but should have repeatingTaskId set
         expect(
-          result.any((task) => task.id == testWeeklyRepeatTask.id),
+          result.any((task) => task.repeatingTaskId == repeatingTaskTemplate.id),
           isTrue,
         );
         
-        // Verify recurring task ID was added to day
+        // Verify a task instance was created and added to day
         final updatedDay = dayBox.get(testDay.id);
-        expect(updatedDay?.dailyTaskIds, contains(testWeeklyRepeatTask.id));
+        expect(updatedDay?.dailyTaskIds.length, equals(2)); // testTask + new recurring task instance
       },
     );
 
     test(
-      'getTasksForDay does not include weekly repeating task on the day it repeats',
+      'getTasksForDay does not include weekly repeating task on the day it does not repeat',
       () async {
-        final testWeeklyRepeatTask = TestFactory.createTestTask(
-          id: 'test-repeat-task-id',
+        // Create a RepeatingTask template that repeats on a different weekday
+        // testDay.date.weekday is 7 (Sunday), so weekday + 1 would be 8, which wraps to 1 (Monday)
+        final differentWeekday = (testDay.date.weekday % 7) + 1;
+        final repeatingTaskTemplate = await RepeatingTaskService.createRepeatingTask(
           title: 'Test Repeat Task',
           energyReward: 5,
-          repeatDayIndices: [testDay.date.weekday + 1],
+          category: TaskCategory.productivity,
+          repeatDayIndices: [differentWeekday],
         );
 
-        await taskBox.put(testWeeklyRepeatTask.id, testWeeklyRepeatTask);
         await dayBox.put(testDay.id, testDay);
 
         final result = await TaskService.getTasksForDay(testDay.date);
@@ -300,13 +316,14 @@ void main() {
         // Test day has a built in task, but recurring task doesn't repeat on this day
         expect(result.length, equals(1));
         expect(
-          result.any((task) => task.id == testWeeklyRepeatTask.id),
+          result.any((task) => task.repeatingTaskId == repeatingTaskTemplate.id),
           isFalse,
         );
         
-        // Verify recurring task ID was NOT added to day
+        // Verify recurring task instance was NOT created and added to day
         final updatedDay = dayBox.get(testDay.id);
-        expect(updatedDay?.dailyTaskIds, isNot(contains(testWeeklyRepeatTask.id)));
+        expect(updatedDay?.dailyTaskIds.length, equals(1)); // Only testTask
+        expect(updatedDay?.dailyTaskIds, isNot(contains(repeatingTaskTemplate.id)));
       },
     );
   });
