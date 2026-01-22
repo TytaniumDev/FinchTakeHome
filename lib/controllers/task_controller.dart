@@ -4,6 +4,7 @@ import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
 import 'package:birdo/model/managers/rainbow_stones_manager.dart';
+import 'package:birdo/model/managers/repeating_task_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:flutter/foundation.dart';
 
@@ -11,16 +12,19 @@ import 'package:flutter/foundation.dart';
 /// of the system, handling user actions related to tasks.
 class TaskController extends BaseController {
   final TaskManager _taskManager;
+  final RepeatingTaskManager _repeatingTaskManager;
   final PetManager _petManager;
   final DayManager _dayManager;
   final RainbowStonesManager _rainbowStonesManager;
 
   TaskController({
     required TaskManager taskManager,
+    required RepeatingTaskManager repeatingTaskManager,
     required PetManager petManager,
     required DayManager dayManager,
     required RainbowStonesManager rainbowStonesManager,
   }) : _taskManager = taskManager,
+       _repeatingTaskManager = repeatingTaskManager,
        _petManager = petManager,
        _dayManager = dayManager,
        _rainbowStonesManager = rainbowStonesManager;
@@ -65,8 +69,8 @@ class TaskController extends BaseController {
         await _dayManager.addRainbowStones(productivityTaskCompletionReward);
       }
 
-      // Award additional rainbow stones if the task is a repeating task
-      if (task.repeatDayIndices?.isNotEmpty ?? false) {
+      // Award additional rainbow stones if the task is a repeating task instance
+      if (task.repeatingTaskId != null) {
         await _rainbowStonesManager.awardTaskCompletionStones(
           repeatedTaskCompletionReward,
         );
@@ -103,15 +107,15 @@ class TaskController extends BaseController {
         await _rainbowStonesManager.removeTaskCompletionStones(
           productivityTaskCompletionReward,
         );
-        await _dayManager.addRainbowStones(productivityTaskCompletionReward);
+        await _dayManager.addRainbowStones(-productivityTaskCompletionReward);
       }
 
-      // Remove additional rainbow stones if the task is a repeating task
-      if (task.repeatDayIndices?.isNotEmpty ?? false) {
+      // Remove additional rainbow stones if the task is a repeating task instance
+      if (task.repeatingTaskId != null) {
         await _rainbowStonesManager.removeTaskCompletionStones(
           repeatedTaskCompletionReward,
         );
-        await _dayManager.addRainbowStones(repeatedTaskCompletionReward);
+        await _dayManager.addRainbowStones(-repeatedTaskCompletionReward);
       }
 
     } catch (e) {
@@ -124,44 +128,95 @@ class TaskController extends BaseController {
     await _taskManager.resetTask(taskId, date: date);
   }
 
-  /// Create a new task
+  /// Create a new one-time task
   Future<void> createTask(
     String title,
     int energyReward,
     TaskCategory category, {
     DateTime? date,
-    List<int>? repeatDayIndices,
   }) async {
     await _taskManager.createTask(
       title,
       energyReward,
       category,
       date: date,
-      repeatDayIndices: repeatDayIndices,
     );
   }
 
-  /// Update an existing task
+  /// Create a new recurring task template
+  Future<void> createRepeatingTask(
+    String title,
+    int energyReward,
+    TaskCategory category,
+    List<int> repeatDayIndices,
+  ) async {
+    // Create the template
+    await _repeatingTaskManager.createRepeatingTask(
+      title: title,
+      energyReward: energyReward,
+      category: category,
+      repeatDayIndices: repeatDayIndices,
+    );
+
+    // Reload tasks for current day (may create instance if today matches)
+    await _taskManager.loadTasks();
+  }
+
+  /// Update an existing task instance (disconnects from template if it was linked)
   Future<void> updateTask(
     String taskId,
     String title,
     int energyReward,
     TaskCategory category, {
     DateTime? date,
-    List<int>? repeatDayIndices,
   }) async {
+    // Get the task to disconnect it from template
+    final task = await _taskManager.getTask(taskId);
+    if (task != null && task.repeatingTaskId != null) {
+      // Disconnect from template by setting repeatingTaskId to null
+      task.repeatingTaskId = null;
+    }
+
     await _taskManager.updateTask(
       taskId,
       title,
       energyReward,
       category,
       date: date,
-      repeatDayIndices: repeatDayIndices,
     );
   }
 
-  /// Delete a task
+  /// Update a recurring task template (affects all future instances)
+  Future<void> updateRepeatingTask(
+    String repeatingTaskId,
+    String title,
+    int energyReward,
+    TaskCategory category,
+    List<int> repeatDayIndices,
+  ) async {
+    final template = await _repeatingTaskManager.getRepeatingTask(repeatingTaskId);
+    if (template == null) {
+      debugPrint('TaskController: Repeating task template not found: $repeatingTaskId');
+      return;
+    }
+
+    template.title = title;
+    template.energyReward = energyReward;
+    template.category = category;
+    template.repeatDayIndices = repeatDayIndices;
+
+    await _repeatingTaskManager.updateRepeatingTask(template);
+    await _taskManager.loadTasks(); // Refresh to show changes
+  }
+
+  /// Delete a task instance
   Future<void> deleteTask(String taskId, {DateTime? date}) async {
     await _taskManager.deleteTask(taskId, date: date);
+  }
+
+  /// Delete a recurring task template (stops creating new instances)
+  Future<void> deleteRepeatingTask(String repeatingTaskId) async {
+    await _repeatingTaskManager.deleteRepeatingTask(repeatingTaskId);
+    await _taskManager.loadTasks(); // Refresh display
   }
 }

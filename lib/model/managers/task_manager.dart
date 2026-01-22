@@ -118,7 +118,6 @@ class TaskManager extends BaseManager {
     int energyReward,
     TaskCategory category, {
     DateTime? date,
-    List<int>? repeatDayIndices,
   }) async {
     debugPrint('TaskManager: Creating task: $title');
     try {
@@ -128,7 +127,6 @@ class TaskManager extends BaseManager {
         energyReward: energyReward,
         category: category,
         date: targetDate,
-        repeatDayIndices: repeatDayIndices,
       );
       debugPrint('TaskManager: Created task: ${task.title} (${task.id})');
 
@@ -148,7 +146,6 @@ class TaskManager extends BaseManager {
     int energyReward,
     TaskCategory category, {
     DateTime? date,
-    List<int>? repeatDayIndices,
   }) async {
     debugPrint('TaskManager: Updating task: $taskId');
     try {
@@ -158,7 +155,6 @@ class TaskManager extends BaseManager {
         task.title = title;
         task.energyReward = energyReward;
         task.category = category;
-        task.repeatDayIndices = repeatDayIndices;
         await TaskService.updateTask(task, date: targetDate);
         debugPrint(
           'TaskManager: Task updated successfully for date: ${targetDate.toString()}',
