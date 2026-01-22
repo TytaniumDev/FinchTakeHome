@@ -130,7 +130,7 @@ void main() {
                 width: 400,
                 height: 100,
                 child: DropdownButtonFormField<TaskCategory>(
-                  value: TaskCategory.productivity,
+                  initialValue: TaskCategory.productivity,
                   decoration: InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(
