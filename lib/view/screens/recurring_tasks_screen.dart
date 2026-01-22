@@ -253,13 +253,6 @@ class RecurringTaskCard extends StatelessWidget {
                   type: ButtonType.accent,
                   isFullWidth: true,
                 ),
-                SizedBox(height: AppTheme.spacing.small),
-                ChunkyButton(
-                  text: 'Cancel',
-                  onPressed: () => Navigator.pop(context),
-                  type: ButtonType.tertiary,
-                  isFullWidth: true,
-                ),
               ],
             ),
           ),
@@ -359,6 +352,7 @@ class _EditRecurringTaskDialogState extends State<_EditRecurringTaskDialog> {
   late TaskCategory _selectedCategory;
   late int _energyReward;
   late List<int> _selectedDays;
+  late RepeatOption _selectedRepeatOption;
 
   @override
   void initState() {
@@ -367,6 +361,13 @@ class _EditRecurringTaskDialogState extends State<_EditRecurringTaskDialog> {
     _selectedCategory = widget.task.category;
     _energyReward = widget.task.energyReward;
     _selectedDays = List<int>.from(widget.task.repeatDayIndices);
+
+    // Determine initial repeat option based on selected days
+    if (_selectedDays.length == 7) {
+      _selectedRepeatOption = RepeatOption.daily;
+    } else {
+      _selectedRepeatOption = RepeatOption.weekly;
+    }
   }
 
   @override
@@ -421,77 +422,101 @@ class _EditRecurringTaskDialogState extends State<_EditRecurringTaskDialog> {
                 ),
                 SizedBox(height: AppTheme.spacing.medium),
 
-                Text(
-                  'Repeat Days',
-                  style: AppTheme.typography.subtitle1,
+                RepeatSelectionFormField(
+                  initialValue: _selectedRepeatOption,
+                  showLabel: false,
+                  showNoneOption: false,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRepeatOption = value;
+                      // Auto-select all days for daily option
+                      if (value == RepeatOption.daily) {
+                        _selectedDays = [
+                          DateTime.monday,
+                          DateTime.tuesday,
+                          DateTime.wednesday,
+                          DateTime.thursday,
+                          DateTime.friday,
+                          DateTime.saturday,
+                          DateTime.sunday,
+                        ];
+                      }
+                    });
+                  },
+                  onSaved: (value) {
+                    if (value != null) {
+                      _selectedRepeatOption = value;
+                    }
+                  },
                 ),
                 SizedBox(height: AppTheme.spacing.small),
 
-                DayRepeatFormField(
-                  initialValue: _selectedDays,
-                  enabled: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select at least one day';
-                    }
-                    return null;
-                  },
-                  onChanged: (days) {
-                    setState(() {
-                      _selectedDays = days;
-                    });
-                  },
-                  onSaved: (days) {
-                    setState(() {
-                      _selectedDays = days ?? [];
-                    });
-                  },
+                AnimatedSlide(
+                  duration: AppTheme.animationDuration.medium,
+                  curve: Curves.easeInOut,
+                  offset: _selectedRepeatOption == RepeatOption.weekly
+                      ? Offset(0, 0)
+                      : Offset(0, -0.2),
+                  child: IgnorePointer(
+                    ignoring: _selectedRepeatOption != RepeatOption.weekly,
+                    child: AnimatedOpacity(
+                      opacity: _selectedRepeatOption == RepeatOption.weekly ? 1.0 : 0.0,
+                      curve: Curves.easeInOut,
+                      duration: AppTheme.animationDuration.medium,
+                      child: DayRepeatFormField(
+                        initialValue: _selectedDays,
+                        enabled: _selectedRepeatOption == RepeatOption.weekly,
+                        validator: (value) {
+                          if (_selectedRepeatOption == RepeatOption.weekly) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select at least one day';
+                            }
+                          }
+                          return null;
+                        },
+                        onChanged: (days) {
+                          setState(() {
+                            _selectedDays = days;
+                          });
+                        },
+                        onSaved: (days) {
+                          setState(() {
+                            _selectedDays = days ?? [];
+                          });
+                        },
+                      ),
+                    ),
+                  ),
                 ),
                 SizedBox(height: AppTheme.spacing.large),
+                ChunkyButton(
+                  text: 'Save',
+                  onPressed: () async {
+                    if (_titleController.text.trim().isEmpty) {
+                      return;
+                    }
+                    if (_selectedDays.isEmpty) {
+                      return;
+                    }
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: ChunkyButton(
-                        text: 'Cancel',
-                        onPressed: () => Navigator.pop(context),
-                        type: ButtonType.tertiary,
-                        isFullWidth: true,
-                      ),
-                    ),
-                    SizedBox(width: AppTheme.spacing.small),
-                    Expanded(
-                      child: ChunkyButton(
-                        text: 'Save',
-                        onPressed: () async {
-                          if (_titleController.text.trim().isEmpty) {
-                            return;
-                          }
-                          if (_selectedDays.isEmpty) {
-                            return;
-                          }
+                    final manager = Provider.of<RepeatingTaskManager>(
+                      context,
+                      listen: false,
+                    );
 
-                          final manager = Provider.of<RepeatingTaskManager>(
-                            context,
-                            listen: false,
-                          );
+                    widget.task.title = _titleController.text.trim();
+                    widget.task.category = _selectedCategory;
+                    widget.task.energyReward = _energyReward;
+                    widget.task.repeatDayIndices = _selectedDays;
 
-                          widget.task.title = _titleController.text.trim();
-                          widget.task.category = _selectedCategory;
-                          widget.task.energyReward = _energyReward;
-                          widget.task.repeatDayIndices = _selectedDays;
+                    await manager.updateRepeatingTask(widget.task);
 
-                          await manager.updateRepeatingTask(widget.task);
-
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        type: ButtonType.primary,
-                        isFullWidth: true,
-                      ),
-                    ),
-                  ],
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  type: ButtonType.primary,
+                  isFullWidth: true,
                 ),
               ],
             ),

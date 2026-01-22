@@ -1,6 +1,5 @@
 import 'package:birdo/core/theme/app_theme.dart';
 import 'package:birdo/model/entities/task.dart';
-import 'package:birdo/view/widgets/task_form.dart';
 import 'package:birdo/view/widgets/task_form_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
