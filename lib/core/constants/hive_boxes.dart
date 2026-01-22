@@ -1,4 +1,5 @@
 const String taskBox = 'tasks';
+const String repeatingTaskBox = 'repeatingTasks';
 const String petBox = 'pets';
 const String dayBox = 'days';
 const String settingsBox = 'settings';
