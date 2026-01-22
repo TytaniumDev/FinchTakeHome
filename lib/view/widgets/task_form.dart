@@ -94,26 +94,46 @@ class _TaskFormState extends State<TaskForm> {
       // manager at the same time, and this lookup should come from somewhere else?
       final targetDate = taskManager.currentDay;
 
-      // Use the task controller to create the task
-      taskController.createTask(
-        title,
-        5, // Default energy reward
-        _selectedCategory,
-        date: targetDate,
-        repeatDayIndices: switch (_selectedRepeatOption) {
-          RepeatOption.none => null,
-          RepeatOption.daily => [
-            DateTime.monday,
-            DateTime.tuesday,
-            DateTime.wednesday,
-            DateTime.thursday,
-            DateTime.friday,
-            DateTime.saturday,
-            DateTime.sunday,
-          ],
-          RepeatOption.weekly => _selectedRepeatDayIndices,
-        },
-      );
+      // Route to the correct controller method based on repeat option
+      switch (_selectedRepeatOption) {
+        case RepeatOption.none:
+          // One-time task
+          taskController.createTask(
+            title,
+            5, // Default energy reward
+            _selectedCategory,
+            date: targetDate,
+          );
+          break;
+
+        case RepeatOption.daily:
+          // Recurring task with all days
+          taskController.createRepeatingTask(
+            title,
+            5, // Default energy reward
+            _selectedCategory,
+            [
+              DateTime.monday,
+              DateTime.tuesday,
+              DateTime.wednesday,
+              DateTime.thursday,
+              DateTime.friday,
+              DateTime.saturday,
+              DateTime.sunday,
+            ],
+          );
+          break;
+
+        case RepeatOption.weekly:
+          // Recurring task with selected days
+          taskController.createRepeatingTask(
+            title,
+            5, // Default energy reward
+            _selectedCategory,
+            _selectedRepeatDayIndices,
+          );
+          break;
+      }
 
       _titleController.clear();
 
