@@ -17,7 +17,8 @@
       "Bash(powershell -Command \"Set-Location 'c:\\\\Users\\\\tywho\\\\OneDrive\\\\Documents\\\\Development\\\\GitHub\\\\FinchTakeHome'; flutter test test\\\\view\\\\task_list_integration_test.dart 2>&1 | Select-Object -Last 50\":*)",
       "Bash(powershell -Command:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(ls:*)"
     ]
   }
 }

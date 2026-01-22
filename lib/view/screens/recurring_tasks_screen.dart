@@ -4,6 +4,7 @@ import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/repeating_task_manager.dart';
 import 'package:birdo/view/widgets/common/chunky_button.dart';
 import 'package:birdo/view/widgets/common/chunky_card.dart';
+import 'package:birdo/view/widgets/task_form_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -86,72 +87,102 @@ class RecurringTaskCard extends StatelessWidget {
     final categoryColor = _getCategoryColor(task.category);
     final daysText = _formatDays(task.repeatDayIndices);
 
-    return ChunkyCard(
-      color: AppTheme.colors.surface,
-      borderRadius: AppTheme.radius.large,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: categoryColor,
-                  borderRadius: BorderRadius.circular(4),
+    return Opacity(
+      opacity: task.isActive ? 1.0 : 0.5,
+      child: ChunkyCard(
+        color: AppTheme.colors.surface,
+        borderRadius: AppTheme.radius.large,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: categoryColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ),
-              SizedBox(width: AppTheme.spacing.medium),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.title,
-                      style: AppTheme.typography.subtitle1.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.colors.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: AppTheme.spacing.small),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.repeat,
-                          size: 16,
-                          color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
-                        ),
-                        SizedBox(width: AppTheme.spacing.small),
-                        Expanded(
-                          child: Text(
-                            daysText,
-                            style: AppTheme.typography.caption.copyWith(
-                              color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
+                SizedBox(width: AppTheme.spacing.medium),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              task.title,
+                              style: AppTheme.typography.subtitle1.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.colors.onSurface,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppTheme.spacing.small),
-                    Text(
-                      '${task.energyReward} energy • ${_getCategoryName(task.category)}',
-                      style: AppTheme.typography.caption.copyWith(
-                        color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
+                          if (!task.isActive) ...[
+                            SizedBox(width: AppTheme.spacing.small),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppTheme.spacing.small,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.colors.onSurface.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(AppTheme.radius.small),
+                              ),
+                              child: Text(
+                                'Inactive',
+                                style: AppTheme.typography.caption.copyWith(
+                                  color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                  ],
+                      SizedBox(height: AppTheme.spacing.small),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.repeat,
+                            size: 16,
+                            color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
+                          ),
+                          SizedBox(width: AppTheme.spacing.small),
+                          Expanded(
+                            child: Text(
+                              daysText,
+                              style: AppTheme.typography.caption.copyWith(
+                                color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppTheme.spacing.small),
+                      Text(
+                        '${task.energyReward} energy • ${_getCategoryName(task.category)}',
+                        style: AppTheme.typography.caption.copyWith(
+                          color: AppTheme.colors.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {
-                  _showTaskOptions(context, task);
-                },
-              ),
-            ],
-          ),
-        ],
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () {
+                    _showTaskOptions(context, task);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -373,35 +404,13 @@ class _EditRecurringTaskDialogState extends State<_EditRecurringTaskDialog> {
                 ),
                 SizedBox(height: AppTheme.spacing.large),
 
-                TextFormField(
+                TaskTitleField(
                   controller: _titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Task Title',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radius.medium),
-                    ),
-                    filled: true,
-                    fillColor: AppTheme.colors.surface,
-                  ),
                 ),
                 SizedBox(height: AppTheme.spacing.medium),
 
-                DropdownButtonFormField<TaskCategory>(
+                TaskCategoryField(
                   initialValue: _selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radius.medium),
-                    ),
-                    filled: true,
-                    fillColor: AppTheme.colors.surface,
-                  ),
-                  items: TaskCategory.values.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(_getCategoryName(category)),
-                    );
-                  }).toList(),
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -418,11 +427,23 @@ class _EditRecurringTaskDialogState extends State<_EditRecurringTaskDialog> {
                 ),
                 SizedBox(height: AppTheme.spacing.small),
 
-                _DaySelector(
-                  selectedDays: _selectedDays,
+                DayRepeatFormField(
+                  initialValue: _selectedDays,
+                  enabled: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select at least one day';
+                    }
+                    return null;
+                  },
                   onChanged: (days) {
                     setState(() {
                       _selectedDays = days;
+                    });
+                  },
+                  onSaved: (days) {
+                    setState(() {
+                      _selectedDays = days ?? [];
                     });
                   },
                 ),
@@ -480,89 +501,4 @@ class _EditRecurringTaskDialogState extends State<_EditRecurringTaskDialog> {
     );
   }
 
-  String _getCategoryName(TaskCategory category) {
-    switch (category) {
-      case TaskCategory.selfCare:
-        return 'Self Care';
-      case TaskCategory.productivity:
-        return 'Productivity';
-      case TaskCategory.exercise:
-        return 'Exercise';
-      case TaskCategory.mindfulness:
-        return 'Mindfulness';
-    }
-  }
-}
-
-class _DaySelector extends StatelessWidget {
-  final List<int> selectedDays;
-  final Function(List<int>) onChanged;
-
-  const _DaySelector({
-    required this.selectedDays,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    return Row(
-      children: [
-        for (int i = 0; i < 7; i++) ...[
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                final dayIndex = i + 1;
-                final newSelection = List<int>.from(selectedDays);
-                if (selectedDays.contains(dayIndex)) {
-                  newSelection.remove(dayIndex);
-                } else {
-                  newSelection.add(dayIndex);
-                }
-                onChanged(newSelection);
-              },
-              child: AnimatedContainer(
-                duration: AppTheme.animationDuration.fast,
-                constraints: const BoxConstraints(minHeight: 40),
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing.small,
-                  vertical: AppTheme.spacing.small,
-                ),
-                decoration: BoxDecoration(
-                  color: selectedDays.contains(i + 1)
-                      ? AppTheme.colors.primary
-                      : AppTheme.colors.surface,
-                  borderRadius: BorderRadius.circular(AppTheme.radius.medium),
-                  border: Border.all(
-                    color: selectedDays.contains(i + 1)
-                        ? AppTheme.colors.primary
-                        : AppTheme.colors.outline.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    dayNames[i],
-                    style: AppTheme.typography.subtitle2.copyWith(
-                      fontSize: 12,
-                      color: selectedDays.contains(i + 1)
-                          ? AppTheme.colors.onPrimary
-                          : AppTheme.colors.onSurface.withValues(alpha: 0.6),
-                      fontWeight: selectedDays.contains(i + 1)
-                          ? FontWeight.w500
-                          : FontWeight.w400,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (i < 6) SizedBox(width: AppTheme.spacing.small),
-        ],
-      ],
-    );
-  }
 }

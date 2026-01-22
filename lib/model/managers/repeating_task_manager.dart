@@ -21,7 +21,7 @@ class RepeatingTaskManager extends ChangeNotifier {
   }
 
   Future<void> loadRepeatingTasks() async {
-    _repeatingTasks = await RepeatingTaskService.getAllActiveRepeatingTasks();
+    _repeatingTasks = await RepeatingTaskService.getAllRepeatingTasks();
     notifyListeners();
   }
 

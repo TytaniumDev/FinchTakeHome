@@ -197,7 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 8),
                         ChunkyButton(
-                          text: 'Manage Recurring Tasks',
+                              text: 'Recurring Tasks',
                           icon: Icons.repeat,
                           type: ButtonType.secondary,
                           onPressed: () {
