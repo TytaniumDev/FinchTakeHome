@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter test:*)",
+      "Bash(flutter --version:*)",
+      "Bash(echo:*)",
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(tee:*)",
+      "Bash(dart run build_runner build:*)",
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter build:*)",
+      "mcp__dart__analyze_files",
+      "Bash(cmd /c \"flutter test test\\\\view\\\\task_list_integration_test.dart\")",
+      "Bash(powershell -Command \"Set-Location 'c:\\\\Users\\\\tywho\\\\OneDrive\\\\Documents\\\\Development\\\\GitHub\\\\FinchTakeHome'; flutter test test\\\\view\\\\task_list_integration_test.dart\":*)",
+      "Bash(powershell -Command \"Set-Location 'c:\\\\Users\\\\tywho\\\\OneDrive\\\\Documents\\\\Development\\\\GitHub\\\\FinchTakeHome'; flutter test test\\\\view\\\\task_list_integration_test.dart 2>&1 | Select-Object -Last 50\":*)",
+      "Bash(powershell -Command:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
