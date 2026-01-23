@@ -3,8 +3,26 @@ import 'package:birdo/model/entities/pet.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
 import 'package:flutter/foundation.dart';
 
-/// This controller coordinates between the PetManager and other components
-/// of the system, handling user actions related to pets.
+/// PetController provides the UI layer interface for pet-related operations.
+///
+/// ## Architectural Purpose
+///
+/// While this controller currently delegates most operations to PetManager,
+/// it exists because the UI layer should only communicate with Controllers,
+/// never directly with Managers. This maintains consistent architecture and:
+///
+/// 1. **Enforces layer boundaries**: Views → Controllers → Managers → Services
+/// 2. **Enables future cross-domain coordination**: If pet operations need to
+///    coordinate with other managers (e.g., awarding rainbow stones on evolution),
+///    this coordination happens here without changing the UI layer.
+/// 3. **Provides a stable API**: The UI depends on PetController's interface,
+///    allowing PetManager internals to change without affecting views.
+/// 4. **Centralizes logging/error handling**: Controller-level error handling
+///    and debug logging is consistent across all pet operations.
+///
+/// See also:
+/// - [PetManager] for pet state management and business logic
+/// - [HomeController] for cross-domain coordination examples
 class PetController extends BaseController {
   /// Manager for pet data and business logic
   final PetManager _petManager;

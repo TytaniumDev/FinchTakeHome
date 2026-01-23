@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:birdo/controllers/home_controller.dart';
 import 'package:birdo/controllers/task_controller.dart';
 import 'package:birdo/core/theme/app_theme.dart';
 import 'package:birdo/model/entities/day.dart';
@@ -46,6 +47,7 @@ void main() {
   late RainbowStonesManager rainbowStonesManager;
   late RepeatingTaskManager repeatingTaskManager;
   late TaskController taskController;
+  late HomeController homeController;
 
   // Use a unique temporary directory for each test run to avoid lock file issues
   late Directory tempDir;
@@ -138,11 +140,19 @@ void main() {
     rainbowStonesManager = RainbowStonesManager();
     repeatingTaskManager = RepeatingTaskManager();
 
-    // Create controller
+    // Create controllers
     taskController = TaskController(
       taskManager: taskManager,
       dayManager: dayManager,
       petManager: petManager,
+      rainbowStonesManager: rainbowStonesManager,
+      repeatingTaskManager: repeatingTaskManager,
+    );
+
+    homeController = HomeController(
+      petManager: petManager,
+      taskManager: taskManager,
+      dayManager: dayManager,
       rainbowStonesManager: rainbowStonesManager,
       repeatingTaskManager: repeatingTaskManager,
     );
@@ -211,7 +221,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
       });
 
       await tester.pumpWidget(buildTestWidget());
@@ -286,7 +296,7 @@ void main() {
           5,
           TaskCategory.selfCare,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
         await taskController.completeTask(task.id);
       });
@@ -359,7 +369,7 @@ void main() {
           5,
           TaskCategory.exercise,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -406,7 +416,7 @@ void main() {
           5,
           TaskCategory.mindfulness,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -451,7 +461,7 @@ void main() {
       await tester.runAsync(() async {
         await taskController.createTask('Task A', 5, TaskCategory.productivity);
         await taskController.createTask('Task B', 3, TaskCategory.selfCare);
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         taskA = taskManager.tasks.firstWhere((t) => t.title == 'Task A');
         taskB = taskManager.tasks.firstWhere((t) => t.title == 'Task B');
       });
@@ -513,7 +523,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -613,7 +623,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -668,7 +678,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -748,7 +758,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -813,7 +823,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -898,7 +908,7 @@ void main() {
           5,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -979,7 +989,7 @@ void main() {
           10,
           TaskCategory.productivity,
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 
@@ -1018,7 +1028,7 @@ void main() {
           5,
           TaskCategory.productivity, // Productivity tasks give rainbow stones
         );
-        await taskManager.loadTasks();
+        await homeController.loadTasks();
         task = taskManager.tasks.first;
       });
 

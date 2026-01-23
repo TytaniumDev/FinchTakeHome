@@ -11,7 +11,6 @@ import 'package:birdo/model/entities/user.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
 import 'package:birdo/model/managers/rainbow_stones_manager.dart';
-import 'package:birdo/model/managers/task_manager.dart';
 import 'package:birdo/model/services/user_service.dart';
 import 'package:birdo/view/widgets/common/birdo_toast.dart';
 import 'package:birdo/view/widgets/common/chunky_button.dart';
@@ -630,7 +629,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _updateDayOffset(int value, {bool reset = false}) async {
     final dayManager = Provider.of<DayManager>(context, listen: false);
     final petManager = Provider.of<PetManager>(context, listen: false);
-    final taskManager = Provider.of<TaskManager>(context, listen: false);
     final rainbowStonesManager = Provider.of<RainbowStonesManager>(
       context,
       listen: false,
@@ -658,7 +656,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Update all managers to reflect the new date
       await dayManager.loadCurrentDay();
-      await taskManager.loadTasksForDay(offsetDate);
+      await homeController.loadTasksForDay(offsetDate);
       await rainbowStonesManager.loadRainbowStones();
       await petManager.loadCurrentPet();
       await homeController.loadHomeScreenData();

@@ -1,33 +1,35 @@
 import 'package:birdo/controllers/base_controller.dart';
-import 'package:birdo/core/constants/hive_boxes.dart';
-import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:birdo/model/managers/settings_manager.dart';
 
-/// Controller for managing the New User Experience (NUX) flow
+/// Controller for managing the New User Experience (NUX) flow.
+///
+/// This controller coordinates the NUX onboarding process and delegates
+/// persistence to SettingsManager.
 class NuxController extends BaseController {
-  static const String nuxCompletionKey = 'hasCompletedNux';
+  final SettingsManager _settingsManager;
 
   int _currentScreenIndex = 0;
   String? birdName;
   String? userName;
+
+  NuxController({required SettingsManager settingsManager})
+      : _settingsManager = settingsManager;
 
   int getCurrentScreenIndex() => _currentScreenIndex;
 
   int getTotalScreenCount() => 2;
 
   Future<bool> isNuxCompleted() async {
-    final settings = Hive.box(settingsBox);
-    return settings.get(nuxCompletionKey, defaultValue: false) as bool;
+    return _settingsManager.nuxCompleted;
   }
 
   Future<void> completeNux() async {
-    final settings = Hive.box(settingsBox);
-    await settings.put(nuxCompletionKey, true);
+    await _settingsManager.completeNux();
   }
 
   /// Reset the NUX completion state (for debugging)
   Future<void> resetNux() async {
-    final settings = Hive.box(settingsBox);
-    await settings.put(nuxCompletionKey, false);
+    await _settingsManager.resetNux();
     _currentScreenIndex = 0;
     birdName = null;
     userName = null;

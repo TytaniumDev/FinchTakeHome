@@ -3,9 +3,12 @@ import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/model/entities/day.dart';
 import 'package:birdo/model/managers/base_manager.dart';
 import 'package:birdo/model/services/day_service.dart';
-import 'package:birdo/model/services/task_service.dart';
 import 'package:flutter/foundation.dart';
 
+/// Manager for Day state and single-domain operations.
+///
+/// Maintains in-memory day state and delegates persistence to DayService.
+/// Cross-domain coordination belongs in controllers.
 class DayManager extends BaseManager {
   final DateTimeService _dateTimeService;
 
@@ -62,6 +65,12 @@ class DayManager extends BaseManager {
     } catch (e) {
       debugPrint('DayManager: Error loading historical days: $e');
     }
+  }
+
+  /// Get or create a Day record for the given date.
+  Future<Day> getOrCreateDay(DateTime date) async {
+    debugPrint('DayManager: Getting or creating day for ${date.toString()}');
+    return await DayService.getOrCreate(date);
   }
 
   Future<void> checkIn() async {
@@ -124,6 +133,7 @@ class DayManager extends BaseManager {
     }
   }
 
+  /// Add a task ID to the current day.
   Future<void> addTaskToDay(String taskId) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to add task to');
@@ -143,7 +153,40 @@ class DayManager extends BaseManager {
     }
   }
 
-  Future<void> completeTask(String taskId, {int? energyReward}) async {
+  /// Add a task ID to a specific day.
+  Future<void> addTaskToDayForDate(DateTime date, String taskId) async {
+    debugPrint('DayManager: Adding task $taskId to day ${date.toString()}');
+    try {
+      await DayService.addTaskToDay(date, taskId);
+      debugPrint('DayManager: Task added to day successfully');
+    } catch (e) {
+      debugPrint('DayManager: Error adding task to day: $e');
+    }
+  }
+
+  /// Remove a task ID from a specific day.
+  Future<void> removeTaskFromDay(DateTime date, String taskId) async {
+    debugPrint('DayManager: Removing task $taskId from day ${date.toString()}');
+    try {
+      await DayService.removeTaskFromDay(date, taskId);
+      debugPrint('DayManager: Task removed from day successfully');
+    } catch (e) {
+      debugPrint('DayManager: Error removing task from day: $e');
+    }
+  }
+
+  /// Remove invalid task IDs from a day and save.
+  Future<void> removeInvalidTaskIds(Day day, List<String> invalidTaskIds) async {
+    if (invalidTaskIds.isEmpty) return;
+
+    debugPrint('DayManager: Removing ${invalidTaskIds.length} invalid task IDs from day');
+    day.dailyTaskIds.removeWhere((id) => invalidTaskIds.contains(id));
+    await DayService.saveDay(day);
+  }
+
+  /// Record task completion by adding energy to the day.
+  /// The energyReward is required - caller must provide it.
+  Future<void> completeTask(String taskId, {required int energyReward}) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to complete task for');
       return;
@@ -152,20 +195,8 @@ class DayManager extends BaseManager {
     debugPrint('DayManager: Completing task $taskId for current day');
     try {
       final currentDate = _dateTimeService.getCurrentDate();
-
-      // Fetch task to get energy reward if not provided
-      int? taskEnergyReward = energyReward;
-      if (taskEnergyReward == null) {
-        final task = await TaskService.getTask(taskId);
-        if (task != null) {
-          taskEnergyReward = task.energyReward;
-        }
-      }
-
-      if (taskEnergyReward != null) {
-        await DayService.addEnergyToDay(currentDate, taskEnergyReward);
-        debugPrint('DayManager: Added $taskEnergyReward energy from task');
-      }
+      await DayService.addEnergyToDay(currentDate, energyReward);
+      debugPrint('DayManager: Added $energyReward energy from task');
 
       await loadCurrentDay();
 
@@ -176,7 +207,9 @@ class DayManager extends BaseManager {
     }
   }
 
-  Future<void> uncompleteTask(String taskId, {int? energyReward}) async {
+  /// Record task un-completion by removing energy from the day.
+  /// The energyReward is required - caller must provide it.
+  Future<void> uncompleteTask(String taskId, {required int energyReward}) async {
     if (_currentDay == null) {
       debugPrint('DayManager: No current day to uncomplete task for');
       return;
@@ -185,20 +218,8 @@ class DayManager extends BaseManager {
     debugPrint('DayManager: Uncompleting task $taskId for current day');
     try {
       final currentDate = _dateTimeService.getCurrentDate();
-
-      // Fetch task to get energy reward if not provided
-      int? taskEnergyReward = energyReward;
-      if (taskEnergyReward == null) {
-        final task = await TaskService.getTask(taskId);
-        if (task != null) {
-          taskEnergyReward = task.energyReward;
-        }
-      }
-
-      if (taskEnergyReward != null) {
-        await DayService.addEnergyToDay(currentDate, -taskEnergyReward);
-        debugPrint('DayManager: Removed $taskEnergyReward energy from task');
-      }
+      await DayService.addEnergyToDay(currentDate, -energyReward);
+      debugPrint('DayManager: Removed $energyReward energy from task');
 
       await loadCurrentDay();
 
