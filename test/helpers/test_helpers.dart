@@ -94,7 +94,6 @@ class TestFactory {
     DateTime? completedAt,
     TaskCategory category = TaskCategory.productivity,
     DateTime? createdDate,
-    List<int>? repeatDayIndices,
   }) {
     return Task(
       id: id ?? 'test-task-id',
@@ -104,7 +103,6 @@ class TestFactory {
       completedAt: completedAt,
       category: category,
       createdDate: createdDate ?? DateTime(2023, 1, 1),
-      repeatDayIndices: repeatDayIndices
     );
   }
 

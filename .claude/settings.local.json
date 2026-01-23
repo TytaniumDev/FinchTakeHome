@@ -22,7 +22,8 @@
       "Bash(claude mcp add:*)",
       "Bash(tree:*)",
       "Bash(git rm:*)",
-      "mcp__dart__run_tests"
+      "mcp__dart__run_tests",
+      "Bash(python3:*)"
     ]
   }
 }

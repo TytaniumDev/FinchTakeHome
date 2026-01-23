@@ -32,10 +32,6 @@ class Task extends TaskBase with HiveObjectMixin {
   @HiveField(7)
   final DateTime createdDate;
 
-  @HiveField(8)
-  @Deprecated('Use repeatingTaskId to link to RepeatingTask template instead')
-  List<int>? repeatDayIndices;
-
   @HiveField(9)
   String? repeatingTaskId;
 
@@ -47,7 +43,6 @@ class Task extends TaskBase with HiveObjectMixin {
     this.completedAt,
     required this.category,
     DateTime? createdDate,
-    this.repeatDayIndices,
     this.repeatingTaskId,
   }) : createdDate = createdDate ?? DateTime.now();
 
@@ -55,7 +50,6 @@ class Task extends TaskBase with HiveObjectMixin {
     required String title,
     required int energyReward,
     required TaskCategory category,
-    List<int>? repeatDayIndices,
     String? repeatingTaskId,
   }) {
     final now = DateTime.now();
@@ -66,7 +60,6 @@ class Task extends TaskBase with HiveObjectMixin {
       energyReward: energyReward,
       category: category,
       createdDate: now,
-      repeatDayIndices: repeatDayIndices,
       repeatingTaskId: repeatingTaskId,
     );
   }
