@@ -152,19 +152,42 @@ class TaskController extends BaseController {
   }
 
   /// Create a new recurring task template.
+  /// If today matches the repeat schedule, also creates a task instance for today.
   Future<void> createRepeatingTask(
     String title,
     int energyReward,
     TaskCategory category,
     List<int> repeatDayIndices,
   ) async {
-    // Create the template
-    await _repeatingTaskManager.createRepeatingTask(
-      title: title,
-      energyReward: energyReward,
-      category: category,
-      repeatDayIndices: repeatDayIndices,
-    );
+    final currentDate = ServiceLocator.dateTimeService.getCurrentDate();
+    debugPrint('TaskController: Creating repeating task: $title');
+
+    try {
+      // Create the template and get it back
+      final template = await _repeatingTaskManager.createRepeatingTask(
+        title: title,
+        energyReward: energyReward,
+        category: category,
+        repeatDayIndices: repeatDayIndices,
+      );
+
+      // Check if today matches the repeat schedule
+      final currentWeekday = currentDate.weekday;
+      if (repeatDayIndices.contains(currentWeekday)) {
+        debugPrint('TaskController: Today matches repeat schedule, creating task instance');
+
+        // Create a task instance from the template
+        final task = await _taskManager.createTaskFromTemplate(template);
+
+        // Add the task to the current day
+        await _dayManager.addTaskToDayForDate(currentDate, task.id);
+
+        // Add task to the UI list
+        _taskManager.addTaskToList(task);
+      }
+    } catch (e) {
+      debugPrint('TaskController: Error creating repeating task: $e');
+    }
   }
 
   /// Update an existing task instance (disconnects from template if it was linked).

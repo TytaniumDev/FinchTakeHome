@@ -27,7 +27,7 @@ class RepeatingTaskManager extends BaseManager {
     return RepeatingTaskService.getRepeatingTask(id);
   }
 
-  Future<void> createRepeatingTask({
+  Future<RepeatingTask> createRepeatingTask({
     required String title,
     required int energyReward,
     required TaskCategory category,
@@ -42,6 +42,7 @@ class RepeatingTaskManager extends BaseManager {
 
     _repeatingTasks.add(task);
     notifyListeners();
+    return task;
   }
 
   Future<void> deleteRepeatingTask(String id) async {

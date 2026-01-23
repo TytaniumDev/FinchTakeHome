@@ -743,12 +743,22 @@ class MockRepeatingTaskManager extends ChangeNotifier
   Future<RepeatingTask?> getRepeatingTask(String id) async => null;
 
   @override
-  Future<void> createRepeatingTask({
+  Future<RepeatingTask> createRepeatingTask({
     required String title,
     required int energyReward,
     required TaskCategory category,
     required List<int> repeatDayIndices,
-  }) async {}
+  }) async {
+    return RepeatingTask(
+      id: 'mock_repeating_task_id',
+      title: title,
+      energyReward: energyReward,
+      category: category,
+      repeatDayIndices: repeatDayIndices,
+      createdDate: DateTime.now(),
+      isActive: true,
+    );
+  }
 
   @override
   Future<void> deleteRepeatingTask(String id) async {}
