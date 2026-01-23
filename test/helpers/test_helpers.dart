@@ -114,7 +114,6 @@ class TestFactory {
     DateTime? date,
     bool checkedIn = false,
     int energy = 0,
-    List<String>? completedTaskIds,
     List<String>? dailyTaskIds,
     int rainbowStonesEarned = 0,
   }) {
@@ -123,7 +122,6 @@ class TestFactory {
       date: date ?? DateTime(2023, 1, 1),
       checkedIn: checkedIn,
       energy: energy,
-      completedTaskIds: completedTaskIds,
       dailyTaskIds: dailyTaskIds,
       rainbowStonesEarned: rainbowStonesEarned,
     );

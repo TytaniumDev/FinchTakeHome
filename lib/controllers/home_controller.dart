@@ -113,7 +113,7 @@ class HomeController extends BaseController {
 
   List<Task> get tasks => _taskManager.tasks;
 
-  bool isTaskCompleted(String taskId) => _dayManager.isTaskCompleted(taskId);
+  bool isTaskCompleted(String taskId) => _taskManager.isTaskCompleted(taskId);
 
   bool get hasCheckedInToday => _dayManager.hasCheckedInToday;
 

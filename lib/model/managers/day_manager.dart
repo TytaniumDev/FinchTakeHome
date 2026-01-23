@@ -22,8 +22,6 @@ class DayManager extends BaseManager {
 
   bool get hasCheckedInToday => _currentDay?.hasCheckedIn() ?? false;
 
-  List<String> get completedTaskIds => List<String>.from(_currentDay?.getCompletedTaskIds() ?? []);
-
   @override
   Future<void> onInitialize() async {
     await loadCurrentDay();
@@ -153,11 +151,7 @@ class DayManager extends BaseManager {
 
     debugPrint('DayManager: Completing task $taskId for current day');
     try {
-      completedTaskIds.add(taskId);
-
       final currentDate = _dateTimeService.getCurrentDate();
-
-      await DayService.completeTask(currentDate, taskId);
 
       // Fetch task to get energy reward if not provided
       int? taskEnergyReward = energyReward;
@@ -190,11 +184,7 @@ class DayManager extends BaseManager {
 
     debugPrint('DayManager: Uncompleting task $taskId for current day');
     try {
-      completedTaskIds.remove(taskId);
-
       final currentDate = _dateTimeService.getCurrentDate();
-
-      await DayService.removeCompletedTask(currentDate, taskId);
 
       // Fetch task to get energy reward if not provided
       int? taskEnergyReward = energyReward;
@@ -217,10 +207,6 @@ class DayManager extends BaseManager {
     } catch (e) {
       debugPrint('DayManager: Error uncompleting task: $e');
     }
-  }
-
-  bool isTaskCompleted(String taskId) {
-    return _currentDay?.isTaskCompleted(taskId) ?? false;
   }
 
   int getTotalEnergy() {

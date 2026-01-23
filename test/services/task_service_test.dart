@@ -213,7 +213,7 @@ void main() {
       expect(retrievedTask!.completedAt, isNull);
     });
 
-    test('resetTask removes task from day completed list', () async {
+    test('resetTask clears isCompleted on task', () async {
       final today = DateTime(2024, 1, 1);
 
       // Create a task
@@ -227,19 +227,19 @@ void main() {
       // Complete the task
       await TaskService.completeTask(task, date: today);
 
-      // Verify task is in day's completed list
-      final dayAfterComplete = await DayService.getDayRecord(today);
-      expect(dayAfterComplete!.completedTaskIds.contains(task.id), isTrue);
+      // Verify task is completed
+      final completedTask = await TaskService.getTask(task.id);
+      expect(completedTask!.isCompleted, isTrue);
 
       // Reset the task
       await TaskService.resetTask(task, date: today);
 
-      // Verify task is removed from day's completed list
-      final dayAfterReset = await DayService.getDayRecord(today);
-      expect(dayAfterReset!.completedTaskIds.contains(task.id), isFalse);
+      // Verify task is no longer completed
+      final resetTask = await TaskService.getTask(task.id);
+      expect(resetTask!.isCompleted, isFalse);
     });
 
-    test('completeTask sets completedAt and adds to day', () async {
+    test('completeTask sets completedAt and isCompleted on task', () async {
       final today = DateTime(2024, 1, 1);
 
       // Create a task
@@ -253,13 +253,10 @@ void main() {
       // Complete the task
       await TaskService.completeTask(task, date: today);
 
-      // Verify task has completedAt timestamp
+      // Verify task has completedAt timestamp and isCompleted flag
       final retrievedTask = await TaskService.getTask(task.id);
       expect(retrievedTask!.completedAt, isNotNull);
-
-      // Verify task is in day's completed list
-      final day = await DayService.getDayRecord(today);
-      expect(day!.completedTaskIds.contains(task.id), isTrue);
+      expect(retrievedTask.isCompleted, isTrue);
     });
   });
 

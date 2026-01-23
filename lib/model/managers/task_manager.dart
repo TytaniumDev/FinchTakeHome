@@ -24,6 +24,24 @@ class TaskManager extends BaseManager {
 
   bool get isTimeTravel => _isTimeTravel;
 
+  /// Returns a new list of completed tasks (where isCompleted == true).
+  /// Returns a new list instance each time to trigger proper UI rebuilds.
+  List<Task> get completedTasks =>
+      List<Task>.from(_tasks.where((t) => t.isCompleted));
+
+  /// Returns the count of completed tasks.
+  int get completedTaskCount => _tasks.where((t) => t.isCompleted).length;
+
+  /// Checks if a specific task is completed.
+  bool isTaskCompleted(String taskId) {
+    try {
+      final task = _tasks.firstWhere((t) => t.id == taskId);
+      return task.isCompleted;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   Future<void> onInitialize() async {
     await loadTasks();

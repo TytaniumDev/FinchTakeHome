@@ -251,8 +251,8 @@ void main() {
           reason: 'Completed task should have 0.6 opacity');
 
       // Verify task is in completed list
-      expect(dayManager.completedTaskIds.contains(task.id), isTrue,
-          reason: 'Task should be in completedTaskIds');
+      expect(taskManager.isTaskCompleted(task.id), isTrue,
+          reason: 'Task should be marked as completed');
 
       // Uncomplete the task via controller - use runAsync for I/O
       await tester.runAsync(() => taskController.uncompleteTask(task.id));
@@ -272,8 +272,8 @@ void main() {
               'Uncompleted task should have full opacity (1.0), but got ${opacityWidget.opacity}');
 
       // Verify task is removed from completed list
-      expect(dayManager.completedTaskIds.contains(task.id), isFalse,
-          reason: 'Task should be removed from completedTaskIds');
+      expect(taskManager.isTaskCompleted(task.id), isFalse,
+          reason: 'Task should be marked as not completed');
     });
 
     testWidgets('uncompleting a task via UI tap restores visual state',
@@ -328,8 +328,8 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // Verify the task is now uncompleted in the data layer
-      expect(dayManager.completedTaskIds.contains(task.id), isFalse,
-          reason: 'Task should be removed from completedTaskIds after tap');
+      expect(taskManager.isTaskCompleted(task.id), isFalse,
+          reason: 'Task should be marked as not completed after tap');
 
       // Verify the AnimatedTaskCard's isCompleted property
       animatedCard = tester.widget<AnimatedTaskCard>(
@@ -349,13 +349,13 @@ void main() {
               'Uncompleted task should have full opacity (1.0), but got ${opacityWidget.opacity}');
     });
 
-    testWidgets('DayManager completedTaskIds updates correctly on uncomplete',
+    testWidgets('Task completion state updates correctly on uncomplete',
         (tester) async {
       // Create a task - use runAsync for I/O operations
       late Task task;
       await tester.runAsync(() async {
         await taskController.createTask(
-          'CompletedTaskIds Test',
+          'Completion State Test',
           5,
           TaskCategory.exercise,
         );
@@ -368,27 +368,26 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // Initially, completedTaskIds should not contain the task
-      expect(dayManager.completedTaskIds.contains(task.id), isFalse);
+      // Initially, task should not be completed
+      expect(taskManager.isTaskCompleted(task.id), isFalse);
 
       // Complete the task - use runAsync for I/O
       await tester.runAsync(() => taskController.completeTask(task.id));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // completedTaskIds should now contain the task
-      expect(dayManager.completedTaskIds.contains(task.id), isTrue,
-          reason: 'completedTaskIds should contain task after completion');
+      // Task should now be completed
+      expect(taskManager.isTaskCompleted(task.id), isTrue,
+          reason: 'Task should be completed after completeTask');
 
       // Uncomplete the task - use runAsync for I/O
       await tester.runAsync(() => taskController.uncompleteTask(task.id));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // completedTaskIds should no longer contain the task
-      expect(dayManager.completedTaskIds.contains(task.id), isFalse,
-          reason:
-              'completedTaskIds should NOT contain task after uncompletion');
+      // Task should no longer be completed
+      expect(taskManager.isTaskCompleted(task.id), isFalse,
+          reason: 'Task should NOT be completed after uncompletion');
 
       // The UI should also reflect this
       final animatedCard = tester.widget<AnimatedTaskCard>(
@@ -429,7 +428,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // Final state should be uncompleted
-      expect(dayManager.completedTaskIds.contains(task.id), isFalse);
+      expect(taskManager.isTaskCompleted(task.id), isFalse);
 
       final animatedCard = tester.widget<AnimatedTaskCard>(
         find.byType(AnimatedTaskCard),
@@ -470,17 +469,17 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(dayManager.completedTaskIds.contains(taskA.id), isTrue);
-      expect(dayManager.completedTaskIds.contains(taskB.id), isTrue);
+      expect(taskManager.isTaskCompleted(taskA.id), isTrue);
+      expect(taskManager.isTaskCompleted(taskB.id), isTrue);
 
       // Uncomplete only Task A - use runAsync for I/O
       await tester.runAsync(() => taskController.uncompleteTask(taskA.id));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(dayManager.completedTaskIds.contains(taskA.id), isFalse,
+      expect(taskManager.isTaskCompleted(taskA.id), isFalse,
           reason: 'Task A should be uncompleted');
-      expect(dayManager.completedTaskIds.contains(taskB.id), isTrue,
+      expect(taskManager.isTaskCompleted(taskB.id), isTrue,
           reason: 'Task B should still be completed');
 
       // Verify UI state for each card
@@ -500,18 +499,17 @@ void main() {
     });
   });
 
-  group('TaskList Integration Tests - Select Rebuild Fix', () {
+  group('TaskList Integration Tests - Task Completion State', () {
     testWidgets(
-        'context.select triggers rebuild when completedTaskIds changes',
+        'TaskManager rebuilds widget when task completion changes',
         (tester) async {
-      // This test verifies that context.select() properly triggers a rebuild
-      // when completedTaskIds changes. The fix is that DayManager.completedTaskIds
-      // now returns a new List instance on each call.
+      // This test verifies that the UI properly rebuilds when task completion
+      // state changes via TaskManager.
 
       late Task task;
       await tester.runAsync(() async {
         await taskController.createTask(
-          'Select Rebuild Test',
+          'Completion State Test',
           5,
           TaskCategory.productivity,
         );
@@ -532,19 +530,14 @@ void main() {
                 ChangeNotifierProvider<DayManager>.value(value: dayManager),
                 Provider<TaskController>.value(value: taskController),
               ],
-              child: Builder(
-                builder: (context) {
-                  // This simulates what TaskList does with select
-                  final completedTaskIds = context.select(
-                    (DayManager manager) => manager.completedTaskIds,
-                  );
+              child: Consumer<TaskManager>(
+                builder: (context, taskMgr, child) {
                   buildCount++;
-
-                  final isCompleted = completedTaskIds.contains(task.id);
+                  final currentTask = taskMgr.tasks.firstWhere((t) => t.id == task.id);
 
                   return AnimatedTaskCard(
-                    task: task,
-                    isCompleted: isCompleted,
+                    task: currentTask,
+                    isCompleted: currentTask.isCompleted,
                     onCheckboxChanged: (value) {
                       if (value == true) {
                         taskController.completeTask(task.id);
@@ -584,21 +577,18 @@ void main() {
 
       final buildCountAfterComplete = buildCount;
 
-      // Uncomplete the task - use runAsync for I/O - THIS IS WHERE THE BUG MIGHT OCCUR
+      // Uncomplete the task - use runAsync for I/O
       await tester.runAsync(() => taskController.uncompleteTask(task.id));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
       // Should have rebuilt again
       expect(buildCount, greaterThan(buildCountAfterComplete),
-          reason:
-              'Widget should rebuild after uncompleting task - if this fails, '
-              'context.select is not detecting the list change!');
+          reason: 'Widget should rebuild after uncompleting task');
 
       card = tester.widget<AnimatedTaskCard>(find.byType(AnimatedTaskCard));
       expect(card.isCompleted, isFalse,
-          reason: 'Task should be uncompleted after uncompleteTask - '
-              'if this fails, the UI did not update');
+          reason: 'Task should be uncompleted after uncompleteTask');
 
       // Also check the animation state
       final opacityFinder = find.descendant(
@@ -611,11 +601,10 @@ void main() {
     });
 
     testWidgets(
-        'completedTaskIds getter returns new list instance each time (fix verification)',
+        'TaskManager.completedTasks returns new list instance each time',
         (tester) async {
-      // This test verifies the fix: DayManager.completedTaskIds now returns
-      // a new List instance on each call via List<String>.from(...).
-      // This allows context.select() to detect changes by reference.
+      // This test verifies that TaskManager.completedTasks returns
+      // a new List instance on each call via List<Task>.from(...).
 
       late Task task;
       await tester.runAsync(() async {
@@ -639,10 +628,10 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // Get list references before and after
-      final listReferenceBefore = dayManager.completedTaskIds;
+      final listReferenceBefore = taskManager.completedTasks;
 
-      expect(listReferenceBefore.contains(task.id), isTrue,
-          reason: 'Task should be in list before uncomplete');
+      expect(listReferenceBefore.any((t) => t.id == task.id), isTrue,
+          reason: 'Task should be in completedTasks before uncomplete');
 
       // Uncomplete the task - use runAsync for I/O
       await tester.runAsync(() => taskController.uncompleteTask(task.id));
@@ -650,17 +639,17 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // Get the list reference AFTER uncompleting
-      final listReferenceAfter = dayManager.completedTaskIds;
+      final listReferenceAfter = taskManager.completedTasks;
 
       // The content should be different
-      expect(listReferenceAfter.contains(task.id), isFalse,
-          reason: 'Task should not be in list after uncomplete');
+      expect(listReferenceAfter.any((t) => t.id == task.id), isFalse,
+          reason: 'Task should not be in completedTasks after uncomplete');
 
-      // The fix ensures each call returns a different list instance
+      // The getter returns a new list instance each call
       final areSameReference = identical(listReferenceBefore, listReferenceAfter);
       expect(areSameReference, isFalse,
-          reason: 'completedTaskIds should return a new List instance '
-              'on each call so context.select() can detect changes');
+          reason: 'completedTasks should return a new List instance '
+              'on each call');
     });
   });
 
@@ -812,10 +801,10 @@ void main() {
     });
 
     testWidgets(
-        'TaskList rebuilds Consumer when DayManager notifies listeners',
+        'TaskList rebuilds Consumer when TaskManager notifies listeners',
         (tester) async {
       // This test verifies that the Consumer inside TaskList rebuilds
-      // when DayManager.completedTaskIds changes.
+      // when task completion state changes via TaskManager.
 
       late Task task;
       await tester.runAsync(() async {
@@ -841,16 +830,17 @@ void main() {
                 ChangeNotifierProvider<DayManager>.value(value: dayManager),
                 Provider<TaskController>.value(value: taskController),
               ],
-              child: Consumer<DayManager>(
-                builder: (context, dayMgr, child) {
+              child: Consumer<TaskManager>(
+                builder: (context, taskMgr, child) {
                   consumerBuildCount++;
-                  final isCompleted = dayMgr.completedTaskIds.contains(task.id);
+                  final currentTask = taskMgr.tasks.firstWhere((t) => t.id == task.id);
+                  final isCompleted = currentTask.isCompleted;
                   debugPrint('Consumer build #$consumerBuildCount: '
                       'isCompleted=$isCompleted');
 
                   return AnimatedTaskCard(
                     key: ValueKey(task.id),
-                    task: task,
+                    task: currentTask,
                     isCompleted: isCompleted,
                     onCheckboxChanged: (value) {
                       if (value == true) {
@@ -889,20 +879,17 @@ void main() {
 
       expect(consumerBuildCount, greaterThan(buildCountAfterComplete),
           reason: 'Consumer should rebuild after uncompleting task. '
-              'If this fails, DayManager.notifyListeners() is not triggering '
-              'a rebuild of Consumer<DayManager>.');
+              'If this fails, TaskManager.notifyListeners() is not triggering '
+              'a rebuild of Consumer<TaskManager>.');
     });
   });
 
-  group('TaskList Integration Tests - Root Cause Analysis', () {
+  group('TaskList Integration Tests - TaskManager completedTasks', () {
     testWidgets(
-        'DayManager.completedTaskIds returns new list on each call (fix verification)',
+        'TaskManager.completedTasks returns new list on each call',
         (tester) async {
-      // This test verifies the fix for the bug where context.select() couldn't
-      // detect changes because the same List<String> instance was returned.
-      // FIX: DayManager.completedTaskIds now returns List<String>.from(...)
-      // which creates a new list on each call, allowing reference comparison
-      // in context.select() to detect changes.
+      // This test verifies that TaskManager.completedTasks returns a new list
+      // on each call, which allows reference comparison to detect changes.
 
       late Task task;
       await tester.runAsync(() async {
@@ -925,26 +912,26 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // Get the completedTaskIds list BEFORE uncomplete via DayManager getter
-      final listBefore = dayManager.completedTaskIds;
+      // Get the completedTasks list BEFORE uncomplete
+      final listBefore = taskManager.completedTasks;
       final listHashBefore = identityHashCode(listBefore);
 
       debugPrint('');
       debugPrint('=== FIX VERIFICATION ===');
-      debugPrint('completedTaskIds list before: $listHashBefore');
-      debugPrint('List contents before: $listBefore');
+      debugPrint('completedTasks list before: $listHashBefore');
+      debugPrint('List contents before: ${listBefore.map((t) => t.id)}');
 
       // Now uncomplete the task - use runAsync for I/O
       await tester.runAsync(() => taskController.uncompleteTask(task.id));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // Get the completedTaskIds list AFTER uncomplete via DayManager getter
-      final listAfter = dayManager.completedTaskIds;
+      // Get the completedTasks list AFTER uncomplete
+      final listAfter = taskManager.completedTasks;
       final listHashAfter = identityHashCode(listAfter);
 
-      debugPrint('completedTaskIds list after: $listHashAfter');
-      debugPrint('List contents after: $listAfter');
+      debugPrint('completedTasks list after: $listHashAfter');
+      debugPrint('List contents after: ${listAfter.map((t) => t.id)}');
       debugPrint('');
 
       final isSameListObject = identical(listBefore, listAfter);
@@ -952,34 +939,34 @@ void main() {
       debugPrint('Same List object? $isSameListObject');
       debugPrint('');
 
-      // With the fix, each call to completedTaskIds returns a new list
+      // Each call to completedTasks returns a new list
       expect(isSameListObject, isFalse,
-          reason: 'DayManager.completedTaskIds should return a new List '
-              'on each call so context.select() can detect changes.');
+          reason: 'TaskManager.completedTasks should return a new List '
+              'on each call.');
 
       // Also verify the content is correct
-      expect(listBefore, contains(task.id),
-          reason: 'List before uncomplete should contain the task ID');
-      expect(listAfter, isNot(contains(task.id)),
-          reason: 'List after uncomplete should not contain the task ID');
+      expect(listBefore.any((t) => t.id == task.id), isTrue,
+          reason: 'List before uncomplete should contain the task');
+      expect(listAfter.any((t) => t.id == task.id), isFalse,
+          reason: 'List after uncomplete should not contain the task');
     });
 
     testWidgets(
-        'Multiple calls to completedTaskIds getter return different list instances',
+        'Multiple calls to completedTasks getter return different list instances',
         (tester) async {
       // This test verifies that consecutive calls to the getter return
-      // different list instances, which is required for context.select() to work.
+      // different list instances.
 
       await tester.pumpWidget(buildTestWidget());
       // Use pump with duration instead of pumpAndSettle to avoid hanging
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      final list1 = dayManager.completedTaskIds;
-      final list2 = dayManager.completedTaskIds;
+      final list1 = taskManager.completedTasks;
+      final list2 = taskManager.completedTasks;
 
       expect(identical(list1, list2), isFalse,
-          reason: 'Each call to completedTaskIds should return a new list instance');
+          reason: 'Each call to completedTasks should return a new list instance');
     });
   });
 

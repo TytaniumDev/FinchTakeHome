@@ -215,8 +215,6 @@ class TaskService {
 
     task.complete();
     await saveTask(task);
-
-    await DayService.completeTask(targetDate, task.id);
   }
 
   static Future<void> resetTask(Task task, {DateTime? date}) async {
@@ -227,8 +225,6 @@ class TaskService {
 
     task.reset();
     await saveTask(task);
-
-    await DayService.removeCompletedTask(targetDate, task.id);
   }
 
   static Future<void> updateTask(Task task, {DateTime? date}) async {

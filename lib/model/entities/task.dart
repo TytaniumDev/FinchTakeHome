@@ -20,7 +20,6 @@ class Task extends TaskBase with HiveObjectMixin {
   int energyReward;
 
   @HiveField(4)
-  @Deprecated('Use completion status from Day entity instead')
   bool isCompleted;
 
   @HiveField(5)
@@ -72,13 +71,11 @@ class Task extends TaskBase with HiveObjectMixin {
     );
   }
 
-  @Deprecated('Use Day.completeTask() instead - completion tracked per-day in Day entity')
   void complete() {
     isCompleted = true;
     completedAt = DateTime.now();
   }
 
-  @Deprecated('Use Day entity to track completion instead')
   void reset() {
     isCompleted = false;
     completedAt = null;

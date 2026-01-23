@@ -122,7 +122,7 @@ void main() {
       expect(result[0].id, equals(testTask.id));
     });
 
-    test('completeTask marks task as completed and updates day', () async {
+    test('completeTask marks task as completed', () async {
       await dayBox.put(testDay.id, testDay);
       await taskBox.put(testTask.id, testTask);
 
@@ -131,9 +131,6 @@ void main() {
       final updatedTask = taskBox.get(testTask.id);
       expect(updatedTask?.isCompleted, isTrue);
       expect(updatedTask?.completedAt, isNotNull);
-
-      final updatedDay = dayBox.get(testDay.id);
-      expect(updatedDay?.completedTaskIds, contains(testTask.id));
     });
 
     test('resetTask resets task completion status', () async {
@@ -148,7 +145,6 @@ void main() {
         id: '2023-01-01',
         date: DateTime(2023, 1, 1),
         dailyTaskIds: [completedTask.id],
-        completedTaskIds: [completedTask.id],
       );
       await dayBox.put(dayWithCompletedTask.id, dayWithCompletedTask);
       await taskBox.put(completedTask.id, completedTask);
@@ -161,9 +157,6 @@ void main() {
       final updatedTask = taskBox.get(completedTask.id);
       expect(updatedTask?.isCompleted, isFalse);
       expect(updatedTask?.completedAt, isNull);
-
-      final updatedDay = dayBox.get(dayWithCompletedTask.id);
-      expect(updatedDay?.completedTaskIds, isEmpty);
     });
 
     test('createTask adds task to day and task box', () async {

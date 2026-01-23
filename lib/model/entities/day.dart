@@ -17,9 +17,6 @@ class Day extends HiveObject {
   @HiveField(3)
   int energy;
 
-  @HiveField(4)
-  List<String> completedTaskIds;
-
   @HiveField(5)
   List<String> dailyTaskIds;
 
@@ -31,11 +28,9 @@ class Day extends HiveObject {
     required this.date,
     this.checkedIn = false,
     this.energy = 0,
-    List<String>? completedTaskIds,
     List<String>? dailyTaskIds,
     this.rainbowStonesEarned = 0,
-  }) : completedTaskIds = completedTaskIds ?? [],
-       dailyTaskIds = dailyTaskIds ?? [];
+  }) : dailyTaskIds = dailyTaskIds ?? [];
 
   factory Day.create(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
@@ -46,7 +41,6 @@ class Day extends HiveObject {
       date: normalizedDate,
       checkedIn: false,
       energy: 0,
-      completedTaskIds: [],
       dailyTaskIds: [],
       rainbowStonesEarned: 0,
     );
@@ -56,22 +50,8 @@ class Day extends HiveObject {
 
   int getTotalEnergy() => energy;
 
-  List<String> getCompletedTaskIds() {
-    return completedTaskIds;
-  }
-
   void addEnergy(int amount) {
     energy += amount;
-  }
-
-  void completeTask(String taskId) {
-    if (!completedTaskIds.contains(taskId)) {
-      completedTaskIds.add(taskId);
-    }
-  }
-
-  bool isTaskCompleted(String taskId) {
-    return completedTaskIds.contains(taskId);
   }
 
   void checkIn() {
@@ -108,7 +88,6 @@ class Day extends HiveObject {
     print('  Checked In: $checkedIn');
     print('  Energy: $energy');
     print('  Rainbow Stones: $rainbowStonesEarned');
-    print('  Completed Task IDs: $completedTaskIds');
     print('  Daily Task IDs: ${dailyTaskIds.length}');
     for (var taskId in dailyTaskIds) {
       print('    - $taskId');

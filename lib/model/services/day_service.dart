@@ -45,7 +45,6 @@ class DayService {
         date: normalizedDate,
         checkedIn: false,
         energy: 0,
-        completedTaskIds: [],
         dailyTaskIds: [],
       );
       await saveDay(day);
@@ -119,22 +118,6 @@ class DayService {
       debugPrint('DayService: Rainbow stones added to day: ${day.id}');
     } else {
       debugPrint('DayService: Day not found, cannot add rainbow stones');
-    }
-  }
-
-  static Future<void> completeTask(DateTime date, String taskId) async {
-    debugPrint('DayService: Completing task $taskId for date: $date');
-    final day = await getOrCreate(date);
-    day.completeTask(taskId);
-    await saveDay(day);
-  }
-
-  static Future<void> removeCompletedTask(DateTime date, String taskId) async {
-    debugPrint('DayService: Removing completed task $taskId for date: $date');
-    final day = await getDayRecord(date);
-    if (day != null) {
-      day.completedTaskIds.remove(taskId);
-      await saveDay(day);
     }
   }
 

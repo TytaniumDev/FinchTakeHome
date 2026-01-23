@@ -65,12 +65,14 @@ class DayAdapterMigration extends TypeAdapter<Day> {
       dailyTaskIds = [];
     }
 
+    // Note: field 4 (completedTaskIds) is no longer used - completion is tracked on Task objects.
+    // Old data may still have field 4, but we ignore it.
+
     return Day(
       id: fields[0] as String,
       date: fields[1] as DateTime,
       checkedIn: fields[2] == null ? false : fields[2] as bool,
       energy: fields[3] == null ? 0 : (fields[3] as num).toInt(),
-      completedTaskIds: (fields[4] as List?)?.cast<String>() ?? [],
       dailyTaskIds: dailyTaskIds,
       rainbowStonesEarned: fields[7] == null ? 0 : (fields[7] as num).toInt(),
     );
@@ -78,8 +80,9 @@ class DayAdapterMigration extends TypeAdapter<Day> {
 
   @override
   void write(BinaryWriter writer, Day obj) {
+    // Note: We no longer write field 4 (completedTaskIds) - completion is tracked on Task objects.
     writer
-      ..writeByte(7)
+      ..writeByte(6) // Number of fields being written
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -88,8 +91,6 @@ class DayAdapterMigration extends TypeAdapter<Day> {
       ..write(obj.checkedIn)
       ..writeByte(3)
       ..write(obj.energy)
-      ..writeByte(4)
-      ..write(obj.completedTaskIds)
       ..writeByte(5)
       ..write(obj.dailyTaskIds)
       ..writeByte(7)

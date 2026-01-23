@@ -62,7 +62,7 @@ void main() {
 
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -81,7 +81,7 @@ void main() {
 
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -123,7 +123,7 @@ void main() {
 
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -160,7 +160,7 @@ void main() {
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
       // Start with the task completed
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -183,7 +183,7 @@ void main() {
       await tester.pump();
 
       // Simulate the DayManager updating completedTaskIds (removing the task)
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       // Rebuild the widget to reflect the state change
       await tester.pumpWidget(buildTestWidget());
@@ -221,7 +221,7 @@ void main() {
 
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -242,7 +242,7 @@ void main() {
       await tester.pump();
 
       // Simulate completion
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -262,7 +262,7 @@ void main() {
       await tester.pump();
 
       // Simulate uncompletion
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -296,7 +296,7 @@ void main() {
 
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -322,7 +322,7 @@ void main() {
 
       mockTaskManager.setTasks([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -349,7 +349,7 @@ void main() {
     testWidgets('shows empty message when no tasks', (tester) async {
       mockTaskManager.setTasks([]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -374,6 +374,45 @@ class MockTaskManager extends ChangeNotifier implements TaskManager {
   void setInitialized(bool initialized) {
     _isInitialized = initialized;
     notifyListeners();
+  }
+
+  /// Sets the completion state of a task by ID
+  void setTaskCompleted(String taskId, bool completed) {
+    final task = _tasks.firstWhere((t) => t.id == taskId, orElse: () => throw StateError('Task not found'));
+    if (completed) {
+      task.complete();
+    } else {
+      task.reset();
+    }
+    notifyListeners();
+  }
+
+  /// Sets completion state for multiple tasks
+  void setTasksCompleted(List<String> completedTaskIds) {
+    for (var task in _tasks) {
+      if (completedTaskIds.contains(task.id)) {
+        task.complete();
+      } else {
+        task.reset();
+      }
+    }
+    notifyListeners();
+  }
+
+  @override
+  List<Task> get completedTasks => List<Task>.from(_tasks.where((t) => t.isCompleted));
+
+  @override
+  int get completedTaskCount => _tasks.where((t) => t.isCompleted).length;
+
+  @override
+  bool isTaskCompleted(String taskId) {
+    try {
+      final task = _tasks.firstWhere((t) => t.id == taskId);
+      return task.isCompleted;
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
@@ -438,16 +477,6 @@ class MockTaskManager extends ChangeNotifier implements TaskManager {
 
 /// Mock DayManager for testing
 class MockDayManager extends ChangeNotifier implements DayManager {
-  List<String> _completedTaskIds = [];
-
-  void setCompletedTaskIds(List<String> ids) {
-    _completedTaskIds = ids;
-    notifyListeners();
-  }
-
-  @override
-  List<String> get completedTaskIds => _completedTaskIds;
-
   @override
   bool get isInitialized => true;
 
@@ -492,9 +521,6 @@ class MockDayManager extends ChangeNotifier implements DayManager {
 
   @override
   Future<void> uncompleteTask(String taskId, {int? energyReward}) async {}
-
-  @override
-  bool isTaskCompleted(String taskId) => _completedTaskIds.contains(taskId);
 
   @override
   int getTotalEnergy() => 0;
