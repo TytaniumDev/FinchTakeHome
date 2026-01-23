@@ -3,11 +3,11 @@ import 'package:birdo/model/entities/task.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive.dart';
 
-/// Custom adapter for Day that handles migration from List<Task> to List<String>
+/// Custom adapter for Day that handles migration from `List<Task>` to `List<String>`
 /// for the dailyTaskIds field (field 5).
 ///
 /// This adapter ensures backwards compatibility when reading old Day records
-/// that have List<Task> in field 5, converting them to List<String> of task IDs.
+/// that have `List<Task>` in field 5, converting them to `List<String>` of task IDs.
 class DayAdapterMigration extends TypeAdapter<Day> {
   @override
   final typeId = 6;

@@ -140,7 +140,7 @@ void main() {
 
     group('Pet Properties', () {
       test('pet preserves all properties through save/load cycle', () async {
-        final pet = await PetService.createNewPet(
+        await PetService.createNewPet(
           name: 'Full Pet',
           gender: Gender.female,
         );

@@ -118,7 +118,7 @@ void main() {
         energyReward: 1,
         category: TaskCategory.productivity,
       );
-      final task2 = await TaskService.createTask(
+      await TaskService.createTask(
         title: 'Task 2',
         energyReward: 2,
         category: TaskCategory.selfCare,

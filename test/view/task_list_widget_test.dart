@@ -794,10 +794,8 @@ class MockTaskController implements TaskController {
   @override
   Future<void> onInitialize() async {}
 
-  @override
   Future<void> loadTasks() async {}
 
-  @override
   Future<void> loadTasksForDay(DateTime date) async {}
 
   @override
