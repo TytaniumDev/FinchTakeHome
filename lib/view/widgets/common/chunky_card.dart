@@ -8,6 +8,7 @@ class ChunkyCard extends StatelessWidget {
   final double borderRadius;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double elevation;
   final double shadowOffset;
   final bool isInteractive;
@@ -19,6 +20,7 @@ class ChunkyCard extends StatelessWidget {
     this.borderRadius = 16.0,
     this.padding = const EdgeInsets.all(16.0),
     this.onTap,
+    this.onLongPress,
     this.elevation = 4.0,
     this.shadowOffset = 4.0,
     this.isInteractive = false,
@@ -38,6 +40,7 @@ class ChunkyCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(borderRadius),
           splashColor:
               isInteractive
@@ -132,6 +135,7 @@ class ChunkyTaskCard extends StatelessWidget {
   final String? description;
   final bool isCompleted;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final VoidCallback? onComplete;
   final Color? categoryColor;
   final Widget? completeButton;
@@ -142,6 +146,7 @@ class ChunkyTaskCard extends StatelessWidget {
     this.description,
     this.isCompleted = false,
     this.onTap,
+    this.onLongPress,
     this.onComplete,
     this.categoryColor,
     this.completeButton,
@@ -166,6 +171,7 @@ class ChunkyTaskCard extends StatelessWidget {
       child: ChunkyCard(
         color: cardColor,
         onTap: onTap,
+        onLongPress: onLongPress,
         isInteractive: onTap != null,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,

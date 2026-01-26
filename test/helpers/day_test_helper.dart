@@ -10,8 +10,7 @@ class TestDay extends Day {
     required super.date,
     super.checkedIn = false,
     super.energy = 0,
-    super.completedTaskIds,
-    super.dailyTasks,
+    super.dailyTaskIds,
     super.rainbowStonesEarned = 0,
     required this.dateTimeService,
   });
@@ -26,8 +25,7 @@ class TestDay extends Day {
       date: normalizedDate,
       checkedIn: false,
       energy: 0,
-      completedTaskIds: [],
-      dailyTasks: [],
+      dailyTaskIds: [],
       rainbowStonesEarned: 0,
       dateTimeService: dateTimeService,
     );
@@ -78,8 +76,7 @@ class MockDayService {
         date: normalizedDate,
         checkedIn: false,
         energy: 0,
-        completedTaskIds: [],
-        dailyTasks: [],
+        dailyTaskIds: [],
       );
       await _dayBox!.put(day.id, day);
     }

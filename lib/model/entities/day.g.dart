@@ -21,8 +21,7 @@ class DayAdapter extends TypeAdapter<Day> {
       date: fields[1] as DateTime,
       checkedIn: fields[2] == null ? false : fields[2] as bool,
       energy: fields[3] == null ? 0 : (fields[3] as num).toInt(),
-      completedTaskIds: (fields[4] as List?)?.cast<String>(),
-      dailyTasks: (fields[5] as List?)?.cast<Task>(),
+      dailyTaskIds: (fields[5] as List?)?.cast<String>(),
       rainbowStonesEarned: fields[7] == null ? 0 : (fields[7] as num).toInt(),
     );
   }
@@ -30,7 +29,7 @@ class DayAdapter extends TypeAdapter<Day> {
   @override
   void write(BinaryWriter writer, Day obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -39,10 +38,8 @@ class DayAdapter extends TypeAdapter<Day> {
       ..write(obj.checkedIn)
       ..writeByte(3)
       ..write(obj.energy)
-      ..writeByte(4)
-      ..write(obj.completedTaskIds)
       ..writeByte(5)
-      ..write(obj.dailyTasks)
+      ..write(obj.dailyTaskIds)
       ..writeByte(7)
       ..write(obj.rainbowStonesEarned);
   }

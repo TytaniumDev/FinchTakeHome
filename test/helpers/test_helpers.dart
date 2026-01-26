@@ -94,7 +94,6 @@ class TestFactory {
     DateTime? completedAt,
     TaskCategory category = TaskCategory.productivity,
     DateTime? createdDate,
-    List<int>? repeatDayIndices,
   }) {
     return Task(
       id: id ?? 'test-task-id',
@@ -104,7 +103,6 @@ class TestFactory {
       completedAt: completedAt,
       category: category,
       createdDate: createdDate ?? DateTime(2023, 1, 1),
-      repeatDayIndices: repeatDayIndices
     );
   }
 
@@ -114,8 +112,7 @@ class TestFactory {
     DateTime? date,
     bool checkedIn = false,
     int energy = 0,
-    List<String>? completedTaskIds,
-    List<Task>? dailyTasks,
+    List<String>? dailyTaskIds,
     int rainbowStonesEarned = 0,
   }) {
     return Day(
@@ -123,8 +120,7 @@ class TestFactory {
       date: date ?? DateTime(2023, 1, 1),
       checkedIn: checkedIn,
       energy: energy,
-      completedTaskIds: completedTaskIds,
-      dailyTasks: dailyTasks,
+      dailyTaskIds: dailyTaskIds,
       rainbowStonesEarned: rainbowStonesEarned,
     );
   }

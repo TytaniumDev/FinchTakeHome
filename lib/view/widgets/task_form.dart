@@ -1,13 +1,11 @@
 import 'package:birdo/controllers/task_controller.dart';
-import 'package:birdo/core/constants/rewards.dart';
 import 'package:birdo/core/theme/app_theme.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:birdo/view/widgets/common/chunky_button.dart';
 import 'package:birdo/view/widgets/common/chunky_card.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:birdo/view/widgets/task_form_fields.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 
 class TaskFormDialog extends StatelessWidget {
@@ -95,26 +93,46 @@ class _TaskFormState extends State<TaskForm> {
       // manager at the same time, and this lookup should come from somewhere else?
       final targetDate = taskManager.currentDay;
 
-      // Use the task controller to create the task
-      taskController.createTask(
-        title,
-        5, // Default energy reward
-        _selectedCategory,
-        date: targetDate,
-        repeatDayIndices: switch (_selectedRepeatOption) {
-          RepeatOption.none => null,
-          RepeatOption.daily => [
-            DateTime.monday,
-            DateTime.tuesday,
-            DateTime.wednesday,
-            DateTime.thursday,
-            DateTime.friday,
-            DateTime.saturday,
-            DateTime.sunday,
-          ],
-          RepeatOption.weekly => _selectedRepeatDayIndices,
-        },
-      );
+      // Route to the correct controller method based on repeat option
+      switch (_selectedRepeatOption) {
+        case RepeatOption.none:
+          // One-time task
+          taskController.createTask(
+            title,
+            5, // Default energy reward
+            _selectedCategory,
+            date: targetDate,
+          );
+          break;
+
+        case RepeatOption.daily:
+          // Recurring task with all days
+          taskController.createRepeatingTask(
+            title,
+            5, // Default energy reward
+            _selectedCategory,
+            [
+              DateTime.monday,
+              DateTime.tuesday,
+              DateTime.wednesday,
+              DateTime.thursday,
+              DateTime.friday,
+              DateTime.saturday,
+              DateTime.sunday,
+            ],
+          );
+          break;
+
+        case RepeatOption.weekly:
+          // Recurring task with selected days
+          taskController.createRepeatingTask(
+            title,
+            5, // Default energy reward
+            _selectedCategory,
+            _selectedRepeatDayIndices,
+          );
+          break;
+      }
 
       _titleController.clear();
 
@@ -163,41 +181,13 @@ class _TaskFormState extends State<TaskForm> {
             ),
             SizedBox(height: AppTheme.spacing.large),
 
-            TextFormField(
+            TaskTitleField(
               controller: _titleController,
-              decoration: InputDecoration(
-                labelText: 'Task Title',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius.medium),
-                ),
-                filled: true,
-                fillColor: AppTheme.colors.surface,
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a task title';
-                }
-                return null;
-              },
             ),
             SizedBox(height: AppTheme.spacing.medium),
 
-            DropdownButtonFormField<TaskCategory>(
+            TaskCategoryField(
               initialValue: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius.medium),
-                ),
-                filled: true,
-                fillColor: AppTheme.colors.surface,
-              ),
-              items: TaskCategory.values.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(_getCategoryName(category)),
-                );
-              }).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -275,18 +265,6 @@ class _TaskFormState extends State<TaskForm> {
     );
   }
 
-  String _getCategoryName(TaskCategory category) {
-    switch (category) {
-      case TaskCategory.selfCare:
-        return 'Self Care';
-      case TaskCategory.productivity:
-        return 'Productivity';
-      case TaskCategory.exercise:
-        return 'Exercise';
-      case TaskCategory.mindfulness:
-        return 'Mindfulness';
-    }
-  }
 }
 
 void showTaskFormDialog(BuildContext context, {VoidCallback? onTaskAdded}) {
@@ -310,168 +288,3 @@ void showTaskFormDialog(BuildContext context, {VoidCallback? onTaskAdded}) {
   );
 }
 
-enum RepeatOption { none, daily, weekly }
-
-class RepeatSelectionFormField extends FormField<RepeatOption> {
-  RepeatSelectionFormField({
-    super.key,
-    RepeatOption super.initialValue = RepeatOption.none,
-    super.onSaved,
-    required Function(RepeatOption) onChanged,
-  }) : super(
-         builder: (FormFieldState<RepeatOption> state) {
-           return Column(
-             crossAxisAlignment: CrossAxisAlignment.stretch,
-             children: [
-               Text(
-                 'Repeat',
-                 style: AppTheme.typography.subtitle1,
-                 textAlign: TextAlign.left,
-               ),
-               RichText(
-                 text: TextSpan(
-                   text: '+$repeatedTaskCompletionReward ',
-                   style: AppTheme.typography.subtitle2,
-                   children: [
-                     WidgetSpan(
-                       child: SvgPicture.asset(
-                         'lib/assets/icons/rainbow-stones.svg',
-                         height: 16,
-                         width: 16,
-                         placeholderBuilder: (BuildContext context) => Icon(
-                           Icons.stars,
-                           size: 16,
-                           color: Colors.purple.shade700,
-                         ),
-                       ),
-                     ),
-                     TextSpan(text: ' bonus for doing repeated tasks!'),
-                   ],
-                 ),
-               ),
-               SizedBox(height: AppTheme.spacing.small),
-               CupertinoSlidingSegmentedControl(
-                 onValueChanged: (RepeatOption? value) {
-                   if (value != null) {
-                     onChanged(value);
-                     state.didChange(value);
-                   }
-                 },
-                 groupValue: state.value,
-                 isMomentary: false,
-                 thumbColor: AppTheme.colors.primary,
-
-                 children: const <RepeatOption, Widget>{
-                   RepeatOption.none: Padding(
-                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                     child: Text('None'),
-                   ),
-                   RepeatOption.daily: Padding(
-                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                     child: Text('Daily'),
-                   ),
-                   RepeatOption.weekly: Padding(
-                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                     child: Text('Weekly'),
-                   ),
-                 },
-               ),
-             ],
-           );
-         },
-       );
-}
-
-/// A custom form field for selecting repeat days of the week.
-///
-/// This one is a bit complicated, because it's using a ToggleButtons widget
-/// which requires a list of booleans to indicate which days are selected.
-///
-/// There's a bit of logic to convert between the list of selected day indices
-/// and the list of booleans used by the ToggleButtons.
-class DayRepeatFormField extends FormField<List<int>> {
-  static const weekdayLabels = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-
-  DayRepeatFormField({
-    super.key,
-    super.initialValue,
-    super.onSaved,
-    super.enabled,
-    super.validator,
-    required Function(List<int>) onChanged,
-  }) : super(
-         builder: (FormFieldState<List<int>> state) {
-           // Convert from a list of selected day indices to a list of booleans.
-           final List<bool> selectedDays = List.generate(
-             DateTime.daysPerWeek,
-             (index) => state.value?.contains(index + 1) ?? false,
-           );
-
-           return InputDecorator(
-
-             decoration: InputDecoration(
-               errorText: state.errorText,
-               border: InputBorder.none,
-               focusedBorder: InputBorder.none,
-               enabledBorder: InputBorder.none,
-               disabledBorder: InputBorder.none,
-               errorBorder: InputBorder.none,
-               contentPadding: EdgeInsets.zero,
-             ),
-             child: Center(
-               child: ToggleButtons(
-                 isSelected: selectedDays,
-                 constraints: BoxConstraints(minWidth: 36, minHeight: 36),
-                 onPressed: (int index) {
-                   // Toggle the day being selected.
-                   selectedDays[index] = !selectedDays[index];
-                   final selectedDayIndices = <int>[];
-
-                   // Convert back to a list of selected day indices with the now
-                   // correctly updated selectedDays list.
-                   for (int i = 0; i < selectedDays.length; i++) {
-                     if (selectedDays[i]) {
-                       selectedDayIndices.add(i + 1);
-                     }
-                   }
-
-                   onChanged(selectedDayIndices);
-                   state.didChange(selectedDayIndices);
-                 },
-                 fillColor: AppTheme.colors.primary,
-                 selectedColor: AppTheme.colors.onSurface,
-                 renderBorder: true,
-                 borderRadius: BorderRadius.circular(AppTheme.radius.medium),
-                 children: List.generate(
-                   DateTime.daysPerWeek,
-                   (index) => WeekdayButton(
-                     label: weekdayLabels[index],
-                     selected: selectedDays[index],
-                   ),
-                 ),
-               ),
-             ),
-           );
-         },
-       );
-}
-
-class WeekdayButton extends StatelessWidget {
-  final String label;
-  final bool selected;
-
-  const WeekdayButton({super.key, required this.label, required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(label, style: TextStyle(fontSize: 13));
-  }
-}

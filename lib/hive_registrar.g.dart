@@ -7,6 +7,7 @@ import 'package:birdo/model/entities/day.dart';
 import 'package:birdo/model/entities/pet.dart';
 import 'package:birdo/model/entities/pet_energy.dart';
 import 'package:birdo/model/entities/rainbow_stones.dart';
+import 'package:birdo/model/entities/repeating_task.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/entities/user.dart';
 
@@ -18,6 +19,7 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(PetEnergyAdapter());
     registerAdapter(PetGrowthStageAdapter());
     registerAdapter(RainbowStonesAdapter());
+    registerAdapter(RepeatingTaskAdapter());
     registerAdapter(TaskAdapter());
     registerAdapter(TaskCategoryAdapter());
     registerAdapter(UserAdapter());
@@ -32,6 +34,7 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
     registerAdapter(PetEnergyAdapter());
     registerAdapter(PetGrowthStageAdapter());
     registerAdapter(RainbowStonesAdapter());
+    registerAdapter(RepeatingTaskAdapter());
     registerAdapter(TaskAdapter());
     registerAdapter(TaskCategoryAdapter());
     registerAdapter(UserAdapter());

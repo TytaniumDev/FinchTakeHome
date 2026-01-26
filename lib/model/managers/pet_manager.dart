@@ -5,6 +5,11 @@ import 'package:birdo/model/managers/base_manager.dart';
 import 'package:birdo/model/services/pet_service.dart';
 import 'package:flutter/foundation.dart';
 
+/// Manager for Pet state and single-domain operations.
+///
+/// Maintains in-memory pet state and delegates persistence to PetService.
+/// Contains all business logic for evolution, energy tracking, and day
+/// transitions. Cross-domain coordination belongs in controllers.
 class PetManager extends BaseManager {
   final DateTimeService _dateTimeService;
 
@@ -90,6 +95,8 @@ class PetManager extends BaseManager {
     }
   }
 
+  /// Evolve the pet if it's ready to evolve.
+  /// Contains the evolution state machine logic.
   Future<void> evolvePet() async {
     if (_currentPet == null) {
       debugPrint('PetManager: No pet to evolve');
@@ -103,9 +110,9 @@ class PetManager extends BaseManager {
 
     debugPrint('PetManager: Evolving pet: ${_currentPet!.id}');
     try {
-      await PetService.evolvePet(_currentPet!.id);
-      await loadCurrentPet();
-      
+      _currentPet!.evolve();
+      await PetService.savePet(_currentPet!);
+
       debugPrint(
         'PetManager: Pet evolved successfully to ${_currentPet!.growthStage}',
       );
@@ -115,6 +122,8 @@ class PetManager extends BaseManager {
     }
   }
 
+  /// Add energy to the pet and track full energy days.
+  /// Contains the full energy day tracking logic.
   Future<void> addEnergy(double amount) async {
     if (_currentPet == null) {
       debugPrint('PetManager: No pet to add energy to');
@@ -123,8 +132,17 @@ class PetManager extends BaseManager {
 
     debugPrint('PetManager: Adding energy to pet: $amount');
     try {
-      await PetService.addEnergy(_currentPet!, amount);
-      await loadCurrentPet();
+      bool wasFullBefore = _currentPet!.energy.isFullEnergy();
+
+      _currentPet!.energy.addEnergy(amount);
+
+      // Track full energy day if we just reached full energy
+      if (!wasFullBefore && _currentPet!.energy.isFullEnergy()) {
+        _currentPet!.energy.markFullEnergyDay();
+        debugPrint('PetManager: Marked full energy day');
+      }
+
+      await PetService.savePet(_currentPet!);
 
       debugPrint('PetManager: Energy added successfully');
       notifyListeners();
@@ -133,16 +151,17 @@ class PetManager extends BaseManager {
     }
   }
 
+  /// Remove energy from the pet.
   Future<void> removeEnergy(double amount) async {
     if (_currentPet == null) {
-      debugPrint('PetManager: No pet to remove energy to');
+      debugPrint('PetManager: No pet to remove energy from');
       return;
     }
 
     debugPrint('PetManager: Removing energy from pet: $amount');
     try {
-      await PetService.removeEnergy(_currentPet!, amount);
-      await loadCurrentPet();
+      _currentPet!.energy.removeEnergy(amount);
+      await PetService.savePet(_currentPet!);
 
       debugPrint('PetManager: Energy removed successfully');
       notifyListeners();
@@ -151,11 +170,11 @@ class PetManager extends BaseManager {
     }
   }
 
-
   bool hasCheckedInToday() {
     return _currentPet?.hasCheckedInToday() ?? false;
   }
 
+  /// Check in the pet for today.
   Future<void> checkIn() async {
     if (_currentPet == null) {
       debugPrint('PetManager: No pet to check in');
@@ -164,8 +183,8 @@ class PetManager extends BaseManager {
 
     debugPrint('PetManager: Checking in pet');
     try {
-      await PetService.checkIn(_currentPet!);
-      await loadCurrentPet();
+      _currentPet!.checkIn();
+      await PetService.savePet(_currentPet!);
 
       debugPrint('PetManager: Pet checked in successfully');
       notifyListeners();
@@ -174,6 +193,8 @@ class PetManager extends BaseManager {
     }
   }
 
+  /// Handle day transition - reset energy, check evolution, etc.
+  /// Contains the comprehensive day transition workflow.
   Future<void> checkDayTransition() async {
     if (_currentPet == null) {
       debugPrint('PetManager: No pet to check day transition for');
@@ -185,8 +206,36 @@ class PetManager extends BaseManager {
       debugPrint('PetManager: Day transition detected');
 
       try {
-        await PetService.handleDayTransition(_currentPet!, currentDate);
-        await loadCurrentPet();
+        // Mark full energy day if applicable before transition
+        if (_currentPet!.energy.isFullEnergy()) {
+          _currentPet!.energy.markFullEnergyDay();
+          debugPrint('PetManager: Marked full energy day during transition');
+        }
+
+        // Check for evolution during day transition
+        if (_currentPet!.isReadyToEvolve()) {
+          _currentPet!.evolve();
+          debugPrint('PetManager: Pet evolved during day transition');
+        }
+
+        // Preserve important stats before reset
+        int fullEnergyDays = _currentPet!.energy.fullEnergyDays;
+        double totalEnergyEarned = _currentPet!.energy.totalEnergyEarned;
+
+        // Reset energy for new day
+        _currentPet!.energy.resetForNewDay();
+
+        // Restore preserved stats
+        _currentPet!.energy.fullEnergyDays = fullEnergyDays;
+        _currentPet!.energy.totalEnergyEarned = totalEnergyEarned;
+
+        // Update max energy for current growth stage
+        _currentPet!.energy.setMaxEnergyForGrowthStage(_currentPet!.growthStage);
+
+        // Update last check-in time
+        _currentPet!.lastCheckInTime = currentDate;
+
+        await PetService.savePet(_currentPet!);
 
         debugPrint('PetManager: Day transition handled successfully');
         notifyListeners();

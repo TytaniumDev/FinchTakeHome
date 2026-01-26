@@ -62,6 +62,7 @@ class TaskCard extends StatelessWidget {
 class AnimatedTaskCard extends StatefulWidget {
   final Task task;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final ValueChanged<bool?>? onCheckboxChanged;
   final bool isCompleted;
 
@@ -69,6 +70,7 @@ class AnimatedTaskCard extends StatefulWidget {
     super.key,
     required this.task,
     this.onTap,
+    this.onLongPress,
     this.onCheckboxChanged,
     required this.isCompleted,
   });
@@ -143,6 +145,7 @@ class _AnimatedTaskCardState extends State<AnimatedTaskCard>
                 title: widget.task.title,
                 isCompleted: widget.isCompleted,
                 onTap: widget.onTap,
+                onLongPress: widget.onLongPress,
                 onComplete: widget.onCheckboxChanged != null
                     ? () => widget.onCheckboxChanged!(!widget.isCompleted)
                     : null,
