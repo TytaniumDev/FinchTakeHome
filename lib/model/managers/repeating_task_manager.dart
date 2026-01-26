@@ -1,23 +1,21 @@
-import 'package:flutter/foundation.dart';
 import '../entities/repeating_task.dart';
 import '../entities/task.dart';
 import '../services/repeating_task_service.dart';
+import 'base_manager.dart';
 
 /// Manager for RepeatingTask state and operations.
 ///
 /// Handles business logic for recurring task templates, following the
 /// architecture pattern where Managers coordinate operations and Services
 /// handle data persistence.
-class RepeatingTaskManager extends ChangeNotifier {
+class RepeatingTaskManager extends BaseManager {
   List<RepeatingTask> _repeatingTasks = [];
-  bool _isInitialized = false;
 
   List<RepeatingTask> get repeatingTasks => List.unmodifiable(_repeatingTasks);
-  bool get isInitialized => _isInitialized;
 
-  Future<void> initialize() async {
+  @override
+  Future<void> onInitialize() async {
     await loadRepeatingTasks();
-    _isInitialized = true;
   }
 
   Future<void> loadRepeatingTasks() async {
@@ -29,7 +27,7 @@ class RepeatingTaskManager extends ChangeNotifier {
     return RepeatingTaskService.getRepeatingTask(id);
   }
 
-  Future<void> createRepeatingTask({
+  Future<RepeatingTask> createRepeatingTask({
     required String title,
     required int energyReward,
     required TaskCategory category,
@@ -44,6 +42,7 @@ class RepeatingTaskManager extends ChangeNotifier {
 
     _repeatingTasks.add(task);
     notifyListeners();
+    return task;
   }
 
   Future<void> deleteRepeatingTask(String id) async {

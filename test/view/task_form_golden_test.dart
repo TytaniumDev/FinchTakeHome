@@ -115,7 +115,7 @@ void main() {
       // Compare with golden file
       await expectLater(
         find.byType(TaskForm),
-        matchesGoldenFile('task_form_all_days_selected.png'),
+        matchesGoldenFile('goldens/task_form_all_days_selected.png'),
       );
     });
 
@@ -140,7 +140,7 @@ void main() {
       // Compare with golden file
       await expectLater(
         find.byType(TaskForm),
-        matchesGoldenFile('task_form_no_days_selected.png'),
+        matchesGoldenFile('goldens/task_form_no_days_selected.png'),
       );
     });
 
@@ -183,7 +183,7 @@ void main() {
       // Compare with golden file
       await expectLater(
         find.byType(TaskForm),
-        matchesGoldenFile('task_form_some_days_selected.png'),
+        matchesGoldenFile('goldens/task_form_some_days_selected.png'),
       );
     });
 
@@ -236,7 +236,7 @@ void main() {
         // Compare with golden file
         await expectLater(
           find.byType(TaskForm),
-          matchesGoldenFile('task_form_iphone13_all_days_selected.png'),
+          matchesGoldenFile('goldens/task_form_iphone13_all_days_selected.png'),
         );
       },
     );

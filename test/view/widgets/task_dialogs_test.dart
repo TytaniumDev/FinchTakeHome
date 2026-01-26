@@ -109,9 +109,15 @@ void main() {
       await tester.pumpWidget(buildTestApp(child: const TaskForm()));
       await tester.pumpAndSettle();
 
-      // Initially day selector should not be visible (opacity 0)
-      final monFinder = find.text('Mon');
-      expect(monFinder, findsNothing); // Not visible initially
+      // Initially day selector is in the tree but with opacity 0 (not visible)
+      // The widget is present but hidden via AnimatedOpacity
+      final animatedOpacity = tester.widget<AnimatedOpacity>(
+        find.ancestor(
+          of: find.text('Mon'),
+          matching: find.byType(AnimatedOpacity),
+        ).first,
+      );
+      expect(animatedOpacity.opacity, 0.0);
 
       // Select Weekly repeat option
       final weeklyFinder = find.text('Weekly');
@@ -119,7 +125,16 @@ void main() {
       await tester.tap(weeklyFinder);
       await tester.pumpAndSettle();
 
-      // Day selector should now be visible
+      // Day selector should now be visible (opacity 1)
+      final animatedOpacityAfter = tester.widget<AnimatedOpacity>(
+        find.ancestor(
+          of: find.text('Mon'),
+          matching: find.byType(AnimatedOpacity),
+        ).first,
+      );
+      expect(animatedOpacityAfter.opacity, 1.0);
+
+      // All day buttons should be present
       expect(find.text('Mon'), findsOneWidget);
       expect(find.text('Tue'), findsOneWidget);
       expect(find.text('Wed'), findsOneWidget);

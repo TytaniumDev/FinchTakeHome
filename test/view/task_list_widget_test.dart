@@ -60,9 +60,9 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -79,9 +79,9 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -121,9 +121,9 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -157,10 +157,10 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
       // Start with the task completed
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -183,7 +183,7 @@ void main() {
       await tester.pump();
 
       // Simulate the DayManager updating completedTaskIds (removing the task)
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       // Rebuild the widget to reflect the state change
       await tester.pumpWidget(buildTestWidget());
@@ -219,9 +219,9 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -242,7 +242,7 @@ void main() {
       await tester.pump();
 
       // Simulate completion
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -262,7 +262,7 @@ void main() {
       await tester.pump();
 
       // Simulate uncompletion
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
@@ -294,9 +294,9 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds(['task-1']);
+      mockTaskManager.setTasksCompleted(['task-1']);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -320,9 +320,9 @@ void main() {
         category: TaskCategory.productivity,
       );
 
-      mockTaskManager.setTasks([testTask]);
+      mockTaskManager.setTasksForTest([testTask]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -347,9 +347,9 @@ void main() {
     });
 
     testWidgets('shows empty message when no tasks', (tester) async {
-      mockTaskManager.setTasks([]);
+      mockTaskManager.setTasksForTest([]);
       mockTaskManager.setInitialized(true);
-      mockDayManager.setCompletedTaskIds([]);
+      mockTaskManager.setTasksCompleted([]);
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
@@ -363,17 +363,64 @@ void main() {
 class MockTaskManager extends ChangeNotifier implements TaskManager {
   List<Task> _tasks = [];
   bool _isInitialized = false;
-  final DateTime _currentDay = DateTime.now();
-  final bool _isTimeTravel = false;
+  DateTime _currentDay = DateTime.now();
+  bool _isTimeTravel = false;
 
-  void setTasks(List<Task> tasks) {
+  @override
+  void setTasks(List<Task> tasks, DateTime date, {bool isTimeTravel = false}) {
     _tasks = tasks;
+    _currentDay = date;
+    _isTimeTravel = isTimeTravel;
     notifyListeners();
+  }
+
+  // Test convenience method - calls setTasks with current date
+  void setTasksForTest(List<Task> tasks) {
+    setTasks(tasks, DateTime.now());
   }
 
   void setInitialized(bool initialized) {
     _isInitialized = initialized;
     notifyListeners();
+  }
+
+  /// Sets the completion state of a task by ID
+  void setTaskCompleted(String taskId, bool completed) {
+    final task = _tasks.firstWhere((t) => t.id == taskId, orElse: () => throw StateError('Task not found'));
+    if (completed) {
+      task.complete();
+    } else {
+      task.reset();
+    }
+    notifyListeners();
+  }
+
+  /// Sets completion state for multiple tasks (test helper)
+  void setTasksCompleted(List<String> completedTaskIds) {
+    for (var task in _tasks) {
+      if (completedTaskIds.contains(task.id)) {
+        task.complete();
+      } else {
+        task.reset();
+      }
+    }
+    notifyListeners();
+  }
+
+  @override
+  List<Task> get completedTasks => List<Task>.from(_tasks.where((t) => t.isCompleted));
+
+  @override
+  int get completedTaskCount => _tasks.where((t) => t.isCompleted).length;
+
+  @override
+  bool isTaskCompleted(String taskId) {
+    try {
+      final task = _tasks.firstWhere((t) => t.id == taskId);
+      return task.isCompleted;
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
@@ -398,25 +445,39 @@ class MockTaskManager extends ChangeNotifier implements TaskManager {
   Future<void> onInitialize() async {}
 
   @override
-  Future<void> loadTasks() async {}
+  Future<void> completeTask(String taskId) async {}
 
   @override
-  Future<void> loadTasksForDay(DateTime date) async {}
+  Future<void> resetTask(String taskId) async {}
 
   @override
-  Future<void> completeTask(String taskId, {DateTime? date}) async {}
+  Future<Task> createTask({
+    required String title,
+    required int energyReward,
+    required TaskCategory category,
+    String? repeatingTaskId,
+  }) async {
+    return Task.create(
+      title: title,
+      energyReward: energyReward,
+      category: category,
+      repeatingTaskId: repeatingTaskId,
+    );
+  }
 
   @override
-  Future<void> resetTask(String taskId, {DateTime? date}) async {}
-
-  @override
-  Future<void> createTask(String title, int energyReward, TaskCategory category,
-      {DateTime? date}) async {}
+  Future<Task> createTaskFromTemplate(RepeatingTask template) async {
+    return Task.create(
+      title: template.title,
+      energyReward: template.energyReward,
+      category: template.category,
+      repeatingTaskId: template.id,
+    );
+  }
 
   @override
   Future<void> updateTask(
-      String taskId, String title, int energyReward, TaskCategory category,
-      {DateTime? date}) async {}
+      String taskId, String title, int energyReward, TaskCategory category) async {}
 
   @override
   Future<Task?> getTask(String taskId) async {
@@ -428,7 +489,33 @@ class MockTaskManager extends ChangeNotifier implements TaskManager {
   }
 
   @override
-  Future<void> deleteTask(String taskId, {DateTime? date}) async {}
+  Future<List<Task>> getTasksByIds(List<String> taskIds) async {
+    return _tasks.where((t) => taskIds.contains(t.id)).toList();
+  }
+
+  @override
+  Future<List<String>> getInvalidTaskIds(List<String> taskIds) async {
+    final validIds = _tasks.map((t) => t.id).toSet();
+    return taskIds.where((id) => !validIds.contains(id)).toList();
+  }
+
+  @override
+  Future<void> deleteTask(String taskId) async {
+    _tasks.removeWhere((t) => t.id == taskId);
+    notifyListeners();
+  }
+
+  @override
+  void addTaskToList(Task task) {
+    _tasks.add(task);
+    notifyListeners();
+  }
+
+  @override
+  void removeTaskFromList(String taskId) {
+    _tasks.removeWhere((t) => t.id == taskId);
+    notifyListeners();
+  }
 
   @override
   void notifyStateChanged() {
@@ -438,16 +525,6 @@ class MockTaskManager extends ChangeNotifier implements TaskManager {
 
 /// Mock DayManager for testing
 class MockDayManager extends ChangeNotifier implements DayManager {
-  List<String> _completedTaskIds = [];
-
-  void setCompletedTaskIds(List<String> ids) {
-    _completedTaskIds = ids;
-    notifyListeners();
-  }
-
-  @override
-  List<String> get completedTaskIds => _completedTaskIds;
-
   @override
   bool get isInitialized => true;
 
@@ -473,6 +550,11 @@ class MockDayManager extends ChangeNotifier implements DayManager {
   Future<void> loadHistoricalDays({int limit = 7}) async {}
 
   @override
+  Future<Day> getOrCreateDay(DateTime date) async {
+    return Day.create(date);
+  }
+
+  @override
   Future<void> checkIn() async {}
 
   @override
@@ -488,13 +570,19 @@ class MockDayManager extends ChangeNotifier implements DayManager {
   Future<void> addTaskToDay(String taskId) async {}
 
   @override
-  Future<void> completeTask(String taskId, {int? energyReward}) async {}
+  Future<void> addTaskToDayForDate(DateTime date, String taskId) async {}
 
   @override
-  Future<void> uncompleteTask(String taskId, {int? energyReward}) async {}
+  Future<void> removeTaskFromDay(DateTime date, String taskId) async {}
 
   @override
-  bool isTaskCompleted(String taskId) => _completedTaskIds.contains(taskId);
+  Future<void> removeInvalidTaskIds(Day day, List<String> invalidTaskIds) async {}
+
+  @override
+  Future<void> completeTask(String taskId, {required int energyReward}) async {}
+
+  @override
+  Future<void> uncompleteTask(String taskId, {required int energyReward}) async {}
 
   @override
   int getTotalEnergy() => 0;
@@ -646,18 +734,31 @@ class MockRepeatingTaskManager extends ChangeNotifier
   Future<void> initialize() async {}
 
   @override
+  Future<void> onInitialize() async {}
+
+  @override
   Future<void> loadRepeatingTasks() async {}
 
   @override
   Future<RepeatingTask?> getRepeatingTask(String id) async => null;
 
   @override
-  Future<void> createRepeatingTask({
+  Future<RepeatingTask> createRepeatingTask({
     required String title,
     required int energyReward,
     required TaskCategory category,
     required List<int> repeatDayIndices,
-  }) async {}
+  }) async {
+    return RepeatingTask(
+      id: 'mock_repeating_task_id',
+      title: title,
+      energyReward: energyReward,
+      category: category,
+      repeatDayIndices: repeatDayIndices,
+      createdDate: DateTime.now(),
+      isActive: true,
+    );
+  }
 
   @override
   Future<void> deleteRepeatingTask(String id) async {}
@@ -670,6 +771,11 @@ class MockRepeatingTaskManager extends ChangeNotifier
 
   @override
   Future<void> activateRepeatingTask(String id) async {}
+
+  @override
+  void notifyStateChanged() {
+    notifyListeners();
+  }
 }
 
 /// Mock TaskController for testing
@@ -688,10 +794,8 @@ class MockTaskController implements TaskController {
   @override
   Future<void> onInitialize() async {}
 
-  @override
   Future<void> loadTasks() async {}
 
-  @override
   Future<void> loadTasksForDay(DateTime date) async {}
 
   @override

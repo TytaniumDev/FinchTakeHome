@@ -20,7 +20,6 @@ import 'package:birdo/model/managers/pet_manager.dart';
 import 'package:birdo/model/managers/rainbow_stones_manager.dart';
 import 'package:birdo/model/managers/repeating_task_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
-import 'package:birdo/model/services/task_migration_service.dart';
 import 'package:birdo/model/services/user_service.dart';
 import 'package:birdo/view/screens/home_screen.dart';
 import 'package:birdo/view/screens/nux/nux_flow.dart';
@@ -105,9 +104,6 @@ Future<void> main() async {
 Future<void> secondaryInitializationSteps() async {
   await UserService.maybeCreateDebugUser();
   await UserService.syncUserToServer();
-
-  // Migrate existing recurring tasks to new RepeatingTask system
-  await TaskMigrationService.migrateRecurringTasks();
 }
 
 class BirdoTasks extends StatefulWidget {
@@ -173,6 +169,7 @@ class _BirdoTasksState extends State<BirdoTasks> {
                 taskManager: context.read<TaskManager>(),
                 dayManager: context.read<DayManager>(),
                 rainbowStonesManager: context.read<RainbowStonesManager>(),
+                repeatingTaskManager: context.read<RepeatingTaskManager>(),
               ),
         ),
         Provider(

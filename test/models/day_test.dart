@@ -85,7 +85,6 @@ void main() {
         date: DateTime(2023, 1, 1),
         checkedIn: false,
         energy: 0,
-        completedTaskIds: [],
         dailyTaskIds: [],
         rainbowStonesEarned: 0,
       );
@@ -96,7 +95,6 @@ void main() {
       expect(testDay.date, equals(DateTime(2023, 1, 1)));
       expect(testDay.checkedIn, isFalse);
       expect(testDay.energy, equals(0));
-      expect(testDay.completedTaskIds, isEmpty);
       expect(testDay.dailyTaskIds, isEmpty);
       expect(testDay.rainbowStonesEarned, equals(0));
     });
@@ -109,7 +107,6 @@ void main() {
       expect(day.date, equals(DateTime(2023, 1, 1)));
       expect(day.checkedIn, isFalse);
       expect(day.energy, equals(0));
-      expect(day.completedTaskIds, isEmpty);
       expect(day.dailyTaskIds, isEmpty);
       expect(day.rainbowStonesEarned, equals(0));
     });
@@ -137,30 +134,6 @@ void main() {
 
       testDay.addEnergy(-5); // Edge case: negative energy
       expect(testDay.energy, equals(10));
-    });
-
-    test('completeTask correctly adds task ID to completed tasks', () {
-      expect(testDay.completedTaskIds, isEmpty);
-
-      testDay.completeTask('task-1');
-      expect(testDay.completedTaskIds, contains('task-1'));
-      expect(testDay.completedTaskIds.length, equals(1));
-
-      // Adding the same task again should not duplicate
-      testDay.completeTask('task-1');
-      expect(testDay.completedTaskIds.length, equals(1));
-
-      testDay.completeTask('task-2');
-      expect(testDay.completedTaskIds, contains('task-2'));
-      expect(testDay.completedTaskIds.length, equals(2));
-    });
-
-    test('isTaskCompleted correctly identifies if task is completed', () {
-      testDay.completedTaskIds = ['task-1', 'task-2'];
-
-      expect(testDay.isTaskCompleted('task-1'), isTrue);
-      expect(testDay.isTaskCompleted('task-2'), isTrue);
-      expect(testDay.isTaskCompleted('task-3'), isFalse);
     });
 
     test('checkIn correctly marks day as checked in', () {

@@ -1,5 +1,6 @@
 import 'package:birdo/controllers/base_controller.dart';
 import 'package:birdo/core/constants/rewards.dart';
+import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/managers/day_manager.dart';
 import 'package:birdo/model/managers/pet_manager.dart';
@@ -8,8 +9,11 @@ import 'package:birdo/model/managers/repeating_task_manager.dart';
 import 'package:birdo/model/managers/task_manager.dart';
 import 'package:flutter/foundation.dart';
 
-/// This controller coordinates between the TaskManager and other components
-/// of the system, handling user actions related to tasks.
+/// Controller for coordinating task-related operations across multiple managers.
+///
+/// This controller handles the orchestration of loading tasks for a day,
+/// including injecting recurring task instances from templates. It coordinates
+/// between TaskManager, DayManager, and RepeatingTaskManager.
 class TaskController extends BaseController {
   final TaskManager _taskManager;
   final RepeatingTaskManager _repeatingTaskManager;
@@ -32,17 +36,7 @@ class TaskController extends BaseController {
   @override
   Future<void> onInitialize() async {}
 
-  /// Load tasks for the current day
-  Future<void> loadTasks() async {
-    await _taskManager.loadTasks();
-  }
-
-  /// Load tasks for a specific day
-  Future<void> loadTasksForDay(DateTime date) async {
-    await _taskManager.loadTasksForDay(date);
-  }
-
-  /// Complete a task and add energy to the pet and day
+  /// Complete a task and add energy to the pet and day.
   Future<void> completeTask(String taskId, {DateTime? date}) async {
     try {
       // Get the task to determine energy reward
@@ -53,12 +47,12 @@ class TaskController extends BaseController {
       }
 
       // Complete the task
-      await _taskManager.completeTask(taskId, date: date);
+      await _taskManager.completeTask(taskId);
 
       // Add energy to the pet
       await _petManager.addEnergy(task.energyReward.toDouble());
 
-      // Update day record (pass energy reward to avoid DayManager fetching task)
+      // Update day record
       await _dayManager.completeTask(taskId, energyReward: task.energyReward);
 
       // Award rainbow stones for task completion (if applicable)
@@ -85,7 +79,7 @@ class TaskController extends BaseController {
     }
   }
 
-  /// Un-complete a task (mark as incomplete)
+  /// Un-complete a task (mark as incomplete).
   Future<void> uncompleteTask(String taskId, {DateTime? date}) async {
     try {
       // Get the task to determine energy reward
@@ -94,12 +88,12 @@ class TaskController extends BaseController {
         debugPrint('TaskController: Task not found: $taskId');
         return;
       }
-      await _taskManager.resetTask(taskId, date: date);
+      await _taskManager.resetTask(taskId);
 
       // Remove energy from the pet
       await _petManager.removeEnergy(task.energyReward.toDouble());
 
-      // Update day record (pass energy reward to avoid DayManager fetching task)
+      // Update day record
       await _dayManager.uncompleteTask(taskId, energyReward: task.energyReward);
 
       // Remove rainbow stones for task completion (if applicable)
@@ -117,52 +111,86 @@ class TaskController extends BaseController {
         );
         await _dayManager.addRainbowStones(-repeatedTaskCompletionReward);
       }
-
     } catch (e) {
-      debugPrint('TaskController: Error completing task: $e');
+      debugPrint('TaskController: Error uncompleting task: $e');
     }
   }
 
-  /// Reset a task (mark as incomplete)
+  /// Reset a task (mark as incomplete).
   Future<void> resetTask(String taskId, {DateTime? date}) async {
-    await _taskManager.resetTask(taskId, date: date);
+    await _taskManager.resetTask(taskId);
   }
 
-  /// Create a new one-time task
+  /// Create a new one-time task and associate it with a day.
   Future<void> createTask(
     String title,
     int energyReward,
     TaskCategory category, {
     DateTime? date,
   }) async {
-    await _taskManager.createTask(
-      title,
-      energyReward,
-      category,
-      date: date,
-    );
+    final targetDate = date ?? ServiceLocator.dateTimeService.getCurrentDate();
+    debugPrint('TaskController: Creating task: $title for ${ServiceLocator.dateTimeService.generateDayId(targetDate)}');
+
+    try {
+      // Create the task
+      final task = await _taskManager.createTask(
+        title: title,
+        energyReward: energyReward,
+        category: category,
+      );
+
+      // Associate task with the day
+      await _dayManager.addTaskToDayForDate(targetDate, task.id);
+
+      // Add task to local list
+      _taskManager.addTaskToList(task);
+
+      debugPrint('TaskController: Created task: ${task.title} (${task.id})');
+    } catch (e) {
+      debugPrint('TaskController: Error creating task: $e');
+    }
   }
 
-  /// Create a new recurring task template
+  /// Create a new recurring task template.
+  /// If today matches the repeat schedule, also creates a task instance for today.
   Future<void> createRepeatingTask(
     String title,
     int energyReward,
     TaskCategory category,
     List<int> repeatDayIndices,
   ) async {
-    // Create the template
-    await _repeatingTaskManager.createRepeatingTask(
-      title: title,
-      energyReward: energyReward,
-      category: category,
-      repeatDayIndices: repeatDayIndices,
-    );
+    final currentDate = ServiceLocator.dateTimeService.getCurrentDate();
+    debugPrint('TaskController: Creating repeating task: $title');
 
-    // Reload tasks for current day (may create instance if today matches)
-    await _taskManager.loadTasks();
+    try {
+      // Create the template and get it back
+      final template = await _repeatingTaskManager.createRepeatingTask(
+        title: title,
+        energyReward: energyReward,
+        category: category,
+        repeatDayIndices: repeatDayIndices,
+      );
+
+      // Check if today matches the repeat schedule
+      final currentWeekday = currentDate.weekday;
+      if (repeatDayIndices.contains(currentWeekday)) {
+        debugPrint('TaskController: Today matches repeat schedule, creating task instance');
+
+        // Create a task instance from the template
+        final task = await _taskManager.createTaskFromTemplate(template);
+
+        // Add the task to the current day
+        await _dayManager.addTaskToDayForDate(currentDate, task.id);
+
+        // Add task to the UI list
+        _taskManager.addTaskToList(task);
+      }
+    } catch (e) {
+      debugPrint('TaskController: Error creating repeating task: $e');
+    }
   }
 
-  /// Update an existing task instance (disconnects from template if it was linked)
+  /// Update an existing task instance (disconnects from template if it was linked).
   Future<void> updateTask(
     String taskId,
     String title,
@@ -182,11 +210,10 @@ class TaskController extends BaseController {
       title,
       energyReward,
       category,
-      date: date,
     );
   }
 
-  /// Update a recurring task template (affects all future instances)
+  /// Update a recurring task template (affects all future instances).
   Future<void> updateRepeatingTask(
     String repeatingTaskId,
     String title,
@@ -206,17 +233,28 @@ class TaskController extends BaseController {
     template.repeatDayIndices = repeatDayIndices;
 
     await _repeatingTaskManager.updateRepeatingTask(template);
-    await _taskManager.loadTasks(); // Refresh to show changes
   }
 
-  /// Delete a task instance
+  /// Delete a task instance.
   Future<void> deleteTask(String taskId, {DateTime? date}) async {
-    await _taskManager.deleteTask(taskId, date: date);
+    final targetDate = date ?? ServiceLocator.dateTimeService.getCurrentDate();
+    debugPrint('TaskController: Deleting task: $taskId from ${ServiceLocator.dateTimeService.generateDayId(targetDate)}');
+
+    try {
+      // Remove task from day
+      await _dayManager.removeTaskFromDay(targetDate, taskId);
+
+      // Delete the task
+      await _taskManager.deleteTask(taskId);
+
+      debugPrint('TaskController: Task deleted: $taskId');
+    } catch (e) {
+      debugPrint('TaskController: Error deleting task: $e');
+    }
   }
 
-  /// Delete a recurring task template (stops creating new instances)
+  /// Delete a recurring task template (stops creating new instances).
   Future<void> deleteRepeatingTask(String repeatingTaskId) async {
     await _repeatingTaskManager.deleteRepeatingTask(repeatingTaskId);
-    await _taskManager.loadTasks(); // Refresh display
   }
 }
