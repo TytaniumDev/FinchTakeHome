@@ -184,49 +184,47 @@ class DayManager extends BaseManager {
     await DayService.saveDay(day);
   }
 
-  /// Record task completion by adding energy to the day.
-  /// The energyReward is required - caller must provide it.
-  Future<void> completeTask(String taskId, {required int energyReward}) async {
+  /// Add energy to the current day.
+  Future<void> addEnergyToDay(int energyAmount) async {
     if (_currentDay == null) {
-      debugPrint('DayManager: No current day to complete task for');
+      debugPrint('DayManager: No current day to add energy to');
       return;
     }
 
-    debugPrint('DayManager: Completing task $taskId for current day');
+    debugPrint('DayManager: Adding $energyAmount energy to current day');
     try {
       final currentDate = _dateTimeService.getCurrentDate();
-      await DayService.addEnergyToDay(currentDate, energyReward);
-      debugPrint('DayManager: Added $energyReward energy from task');
+      await DayService.addEnergyToDay(currentDate, energyAmount);
+      debugPrint('DayManager: Added $energyAmount energy');
 
       await loadCurrentDay();
 
-      debugPrint('DayManager: Task completed successfully');
+      debugPrint('DayManager: Energy added successfully');
       notifyListeners();
     } catch (e) {
-      debugPrint('DayManager: Error completing task: $e');
+      debugPrint('DayManager: Error adding energy to day: $e');
     }
   }
 
-  /// Record task un-completion by removing energy from the day.
-  /// The energyReward is required - caller must provide it.
-  Future<void> uncompleteTask(String taskId, {required int energyReward}) async {
+  /// Remove energy from the current day.
+  Future<void> removeEnergyFromDay(int energyAmount) async {
     if (_currentDay == null) {
-      debugPrint('DayManager: No current day to uncomplete task for');
+      debugPrint('DayManager: No current day to remove energy from');
       return;
     }
 
-    debugPrint('DayManager: Uncompleting task $taskId for current day');
+    debugPrint('DayManager: Removing $energyAmount energy from current day');
     try {
       final currentDate = _dateTimeService.getCurrentDate();
-      await DayService.addEnergyToDay(currentDate, -energyReward);
-      debugPrint('DayManager: Removed $energyReward energy from task');
+      await DayService.addEnergyToDay(currentDate, -energyAmount);
+      debugPrint('DayManager: Removed $energyAmount energy');
 
       await loadCurrentDay();
 
-      debugPrint('DayManager: Task uncompleted successfully');
+      debugPrint('DayManager: Energy removed successfully');
       notifyListeners();
     } catch (e) {
-      debugPrint('DayManager: Error uncompleting task: $e');
+      debugPrint('DayManager: Error removing energy from day: $e');
     }
   }
 

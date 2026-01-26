@@ -1,13 +1,14 @@
 import 'package:hive_ce/hive.dart';
+import 'package:uuid/uuid.dart';
 import 'task.dart';
 import 'task_base.dart';
 
 part 'repeating_task.g.dart';
 
+const _uuid = Uuid();
+
 @HiveType(typeId: 9)
 class RepeatingTask extends TaskBase with HiveObjectMixin {
-  /// Counter to ensure unique IDs even when created within the same microsecond
-  static int _idCounter = 0;
   @HiveField(0)
   final String id;
 
@@ -48,15 +49,13 @@ class RepeatingTask extends TaskBase with HiveObjectMixin {
     required TaskCategory category,
     required List<int> repeatDayIndices,
   }) {
-    final now = DateTime.now();
-    final uniqueId = 'repeat_${now.microsecondsSinceEpoch}_${_idCounter++}';
     return RepeatingTask(
-      id: uniqueId,
+      id: _uuid.v4(),
       title: title,
       energyReward: energyReward,
       category: category,
       repeatDayIndices: repeatDayIndices,
-      createdDate: now,
+      createdDate: DateTime.now(),
     );
   }
 }

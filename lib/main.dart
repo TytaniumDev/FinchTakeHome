@@ -140,22 +140,15 @@ class _BirdoTasksState extends State<BirdoTasks> {
         ChangeNotifierProvider(create: (_) => EnergyManager()),
         ChangeNotifierProvider(create: (_) => RainbowStonesManager()),
 
-        ProxyProvider6<TaskManager, RepeatingTaskManager, PetManager, DayManager, EnergyManager, RainbowStonesManager, TaskController>(
-          create: (context) => TaskController(
-            taskManager: context.read<TaskManager>(),
-            repeatingTaskManager: context.read<RepeatingTaskManager>(),
-            petManager: context.read<PetManager>(),
-            dayManager: context.read<DayManager>(),
-            rainbowStonesManager: context.read<RainbowStonesManager>(),
-          ),
-          update: (context, taskManager, repeatingTaskManager, petManager, dayManager, energyManager, rainbowStonesManager, previous) =>
-            TaskController(
-              taskManager: taskManager,
-              repeatingTaskManager: repeatingTaskManager,
-              petManager: petManager,
-              dayManager: dayManager,
-              rainbowStonesManager: rainbowStonesManager,
-            ),
+        Provider(
+          create:
+              (context) => TaskController(
+                taskManager: context.read<TaskManager>(),
+                repeatingTaskManager: context.read<RepeatingTaskManager>(),
+                petManager: context.read<PetManager>(),
+                dayManager: context.read<DayManager>(),
+                rainbowStonesManager: context.read<RainbowStonesManager>(),
+              ),
         ),
         Provider(
           create:

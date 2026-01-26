@@ -53,7 +53,7 @@ class TaskController extends BaseController {
       await _petManager.addEnergy(task.energyReward.toDouble());
 
       // Update day record
-      await _dayManager.completeTask(taskId, energyReward: task.energyReward);
+      await _dayManager.addEnergyToDay(task.energyReward);
 
       // Award rainbow stones for task completion (if applicable)
       if (task.category == TaskCategory.productivity) {
@@ -94,7 +94,7 @@ class TaskController extends BaseController {
       await _petManager.removeEnergy(task.energyReward.toDouble());
 
       // Update day record
-      await _dayManager.uncompleteTask(taskId, energyReward: task.energyReward);
+      await _dayManager.removeEnergyFromDay(task.energyReward);
 
       // Remove rainbow stones for task completion (if applicable)
       if (task.category == TaskCategory.productivity) {

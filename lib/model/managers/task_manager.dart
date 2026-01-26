@@ -1,5 +1,3 @@
-import 'package:birdo/core/services/date_time_service.dart';
-import 'package:birdo/core/services/service_locator.dart';
 import 'package:birdo/model/entities/task.dart';
 import 'package:birdo/model/entities/repeating_task.dart';
 import 'package:birdo/model/managers/base_manager.dart';
@@ -12,21 +10,17 @@ import 'package:flutter/foundation.dart';
 /// Cross-domain coordination (with DayManager, RepeatingTaskManager) belongs
 /// in TaskController.
 class TaskManager extends BaseManager {
-  final DateTimeService _dateTimeService;
-
   List<Task> _tasks = [];
 
-  DateTime _currentDay;
+  DateTime? _currentDay;
 
   bool _isTimeTravel = false;
 
-  TaskManager({DateTimeService? dateTimeService})
-    : _dateTimeService = dateTimeService ?? ServiceLocator.dateTimeService,
-      _currentDay = ServiceLocator.dateTimeService.getCurrentDate();
+  TaskManager();
 
   List<Task> get tasks => _tasks;
 
-  DateTime get currentDay => _currentDay;
+  DateTime? get currentDay => _currentDay;
 
   bool get isTimeTravel => _isTimeTravel;
 
@@ -51,7 +45,7 @@ class TaskManager extends BaseManager {
   @override
   Future<void> onInitialize() async {
     // Just initialize state - actual loading is done by TaskController
-    _currentDay = _dateTimeService.getCurrentDate();
+    // _currentDay will be set when setTasks() is called
   }
 
   /// Set the tasks list and current day. Called by TaskController after orchestration.
